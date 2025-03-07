@@ -22,6 +22,8 @@ struct AudioDevice {
     name: String,
 }
 
+pub fn stop() {}
+
 pub fn get_microphones() -> Result<String, anyhow::Error> {
     let mut devices_list = Vec::new();
     let host = cpal::default_host();
@@ -39,7 +41,7 @@ pub fn get_microphones() -> Result<String, anyhow::Error> {
     Ok(serde_json::to_string(&devices_list)?)
 }
 
-use cpal::{FromSample, Sample, SupportedStreamConfig};
+use cpal::{FromSample, Sample};
 use std::fs::File;
 use std::io::BufWriter;
 use std::sync::{Arc, Mutex};
@@ -97,13 +99,13 @@ pub fn record(device_id: &str) -> Result<(), anyhow::Error> {
         )?,
         cpal::SampleFormat::I32 => device.build_input_stream(
             &config.into(),
-            move |data, _: &_| write_input_data::<i32, i32>(data, &writer_2),
+            move |data, _: &_| write_input_data::<i32, i16>(data, &writer_2),
             err_fn,
             None,
         )?,
         cpal::SampleFormat::F32 => device.build_input_stream(
             &config.into(),
-            move |data, _: &_| write_input_data::<f32, i32>(data, &writer_2),
+            move |data, _: &_| write_input_data::<f32, i16>(data, &writer_2),
             err_fn,
             None,
         )?,
@@ -126,14 +128,31 @@ pub fn record(device_id: &str) -> Result<(), anyhow::Error> {
 
 fn wav_spec_from_config(config: &cpal::SupportedStreamConfig) -> hound::WavSpec {
     hound::WavSpec {
-        channels: config.channels() as _,
+        channels: 1,
         sample_rate: config.sample_rate().0 as _,
-        bits_per_sample: (config.sample_format().sample_size() * 8) as _,
+        bits_per_sample: 16, // 16 bits per sample
+        // channels: config.channels() as _,
+        // bits_per_sample: (config.sample_format().sample_size() * 8) as _,
         sample_format: hound::SampleFormat::Int,
     }
 }
 
 type WavWriterHandle = Arc<Mutex<Option<hound::WavWriter<BufWriter<File>>>>>;
+
+// fn write_input_data<T, U>(input: &[T], writer: &WavWriterHandle)
+// where
+//     T: Sample,
+//     U: Sample + hound::Sample + FromSample<T>,
+// {
+//     if let Ok(mut guard) = writer.try_lock() {
+//         if let Some(writer) = guard.as_mut() {
+//             for &sample in input.iter() {
+//                 let sample: U = U::from_sample(sample);
+//                 writer.write_sample(sample).ok();
+//             }
+//         }
+//     }
+// }
 
 fn write_input_data<T, U>(input: &[T], writer: &WavWriterHandle)
 where
@@ -144,6 +163,17 @@ where
         if let Some(writer) = guard.as_mut() {
             for &sample in input.iter() {
                 let sample: U = U::from_sample(sample);
+
+                // // Преобразование в 16-битный моно, если нужно
+                // let mono_sample = if writer.spec().channels == 2 {
+                //     // Если стерео, то усредняем каналы для моно
+                //     let left = sample.unwrap_or(0);
+                //     let right = sample.unwrap_or(0);
+                //     ((left + right) / 2) // усредняем два канала
+                // } else {
+                //     sample.unwrap_or(0)
+                // };
+
                 writer.write_sample(sample).ok();
             }
         }

@@ -1,7 +1,10 @@
 mod audio;
 mod input;
-use audio::{get_microphones as get_audio_microphones, record};
-// use input::paste_text;
+use audio::{get_microphones as get_audio_microphones, record, stop};
+mod whisper;
+use whisper::inference;
+
+use input::paste_text;
 // use std::thread;
 // use std::time::Duration;
 
@@ -15,8 +18,17 @@ use audio::{get_microphones as get_audio_microphones, record};
 // }
 
 #[tauri::command]
-fn start_record(device_id: &str) {
+fn start_record(device_id: &str) -> String {
     let _ = record(device_id);
+    let result = inference();
+    let _ = paste_text(&result);
+    result
+}
+
+#[tauri::command]
+fn stop_record() {
+    // let _ = stop();
+    // inference();
 }
 
 // Функция-обертка для Tauri

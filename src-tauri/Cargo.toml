@@ -30,6 +30,7 @@ hound = "2.0"
 clap = "4.5.31"
 anyhow = "1.0"
 cc = "1.2"
+whisper-rs = "0.14"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.54", features = [

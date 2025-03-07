@@ -7,6 +7,14 @@ const greetMsg = ref("...");
 const refresh = async () => {
   return fetchMicrophones();
 };
+const stopRecord = async () => {
+  try {
+    await invoke("stop_record");
+    greetMsg.value = "Recording stopped";
+  } catch (err) {
+    greetMsg.value = "Error stopping recording: " + err;
+  }
+};
 const startRecord = async () => {
   if (!selectedMic.value) {
     alert("Выберите микрофон");
@@ -14,8 +22,10 @@ const startRecord = async () => {
   }
 
   try {
-    await invoke("start_record", { deviceId: selectedMic.value });
-    greetMsg.value = "Recording started";
+    const result = await invoke<string>("start_record", {
+      deviceId: selectedMic.value,
+    });
+    greetMsg.value = result;
   } catch (err) {
     greetMsg.value = "Error starting recording: " + err;
   }
@@ -52,7 +62,7 @@ onMounted(fetchMicrophones);
 
     {{ selectedMic }}
 
-    <form class="row" @submit.prevent="startRecord">
+    <div class="row">
       <label for="mic-select">Выберите микрофон:</label>
       <select v-model="selectedMic">
         <option v-for="mic in microphones" :key="mic.id" :value="mic.id">
@@ -63,8 +73,9 @@ onMounted(fetchMicrophones);
       <!-- <input id="greet-input" v-model="name" placeholder="Enter a name..." /> -->
       <button @click="refresh">Refresh</button>
       <br />
-      <button type="submit">Start record</button>
-    </form>
+      <button @click="startRecord">Start record</button>
+      <button @click="stopRecord">Stop</button>
+    </div>
     <p>{{ greetMsg }}</p>
   </main>
 </template>
