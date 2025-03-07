@@ -1,36 +1,69 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
-const greetMsg = ref("");
-const name = ref("");
+const greetMsg = ref("...");
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
+const refresh = async () => {
+  return fetchMicrophones();
+};
+const startRecord = async () => {
+  if (!selectedMic.value) {
+    alert("Выберите микрофон");
+    return;
+  }
+
+  try {
+    await invoke("start_record", { deviceId: selectedMic.value });
+    greetMsg.value = "Recording started";
+  } catch (err) {
+    greetMsg.value = "Error starting recording: " + err;
+  }
+};
+
+// Определяем тип микрофона
+interface Microphone {
+  id: number;
+  name: string;
 }
+
+const microphones = ref<Microphone[]>([]);
+const selectedMic = ref<number | null>(null);
+
+const fetchMicrophones = async () => {
+  try {
+    const result = await invoke<string>("get_microphones"); // Приходит JSON-строка
+    microphones.value = JSON.parse(result) as Microphone[]; // Парсим JSON в массив объектов
+
+    if (microphones.value.length > 0) {
+      selectedMic.value = microphones.value[0].id; // Теперь без ошибки
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки микрофонов:", error);
+  }
+};
+
+onMounted(fetchMicrophones);
 </script>
 
 <template>
   <main class="container">
     <h1>Welcome to Tauri + Vue</h1>
 
-    <div class="row">
-      <a href="https://vitejs.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
+    {{ selectedMic }}
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
+    <form class="row" @submit.prevent="startRecord">
+      <label for="mic-select">Выберите микрофон:</label>
+      <select v-model="selectedMic">
+        <option v-for="mic in microphones" :key="mic.id" :value="mic.id">
+          {{ mic.name }}
+        </option>
+      </select>
+      <!-- <button @click="startRecord"></button> -->
+      <!-- <input id="greet-input" v-model="name" placeholder="Enter a name..." /> -->
+      <button @click="refresh">Refresh</button>
+      <br />
+      <button type="submit">Start record</button>
     </form>
     <p>{{ greetMsg }}</p>
   </main>
@@ -44,7 +77,6 @@ async function greet() {
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #249b73);
 }
-
 </style>
 <style>
 :root {
@@ -156,5 +188,4 @@ button {
     background-color: #0f0f0f69;
   }
 }
-
 </style>

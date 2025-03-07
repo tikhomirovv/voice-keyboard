@@ -2,7 +2,7 @@ use crate::public::*;
 use once_cell::sync::Lazy;
 pub use std::{
     collections::hash_map::HashMap,
-    sync::atomic::{AtomicPtr, Ordering},
+    sync::atomic::Ordering,
     sync::{atomic::AtomicBool, Arc, Mutex},
     thread::spawn,
 };
