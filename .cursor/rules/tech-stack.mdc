@@ -5,6 +5,9 @@ alwaysApply: false
 ---
 # Tech Stack Overview
 
+## Package manager
+ - Bun
+
 ## Frontend:
  - Vue 3: Modern, reactive framework for building the user interface.
  - Tailwind CSS: Utility-first CSS framework for responsive and customizable UI design.

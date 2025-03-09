@@ -2,7 +2,7 @@ mod modules;
 use modules::{
     audio::{get_microphones as get_audio_microphones, record, stop},
     input::paste_text,
-    transcribation::whisper::inference,
+    transcribation::local::inference,
 };
 
 #[tauri::command]
@@ -28,6 +28,7 @@ fn get_microphones() -> Result<String, String> {
 pub fn run() {
     // Создаём Tauri приложение и связываем команды
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_microphones,
