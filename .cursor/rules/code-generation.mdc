@@ -1,0 +1,9 @@
+---
+description: Code-generation rules
+globs: 
+alwaysApply: false
+---
+# Code generation rules
+
+- When generating code, try to use the fewest number of lines possible. The fewer lines, the better.
+- DO NOT DELETE COMMENTS

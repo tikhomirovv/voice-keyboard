@@ -1,0 +1,6 @@
+---
+description: Main project rules
+globs: 
+alwaysApply: true
+---
+I am new to Rust and have very little understanding of the language and architecture of this language. I know JavaScript and have experience with Vue 2, but no experience with Vue 3.
