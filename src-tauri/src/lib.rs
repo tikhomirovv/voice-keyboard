@@ -1,10 +1,10 @@
-mod audio;
-mod input;
-use audio::{get_microphones as get_audio_microphones, record, stop};
-mod whisper;
-use whisper::inference;
+mod modules;
+use modules::{
+    audio::{get_microphones as get_audio_microphones, record},
+    input::paste_text,
+    transcribation::whisper::inference,
+};
 
-use input::paste_text;
 // use std::thread;
 // use std::time::Duration;
 
