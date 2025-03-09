@@ -1,9 +1,10 @@
 ---
-description: Code-generation rules
+description: Use this rules when generate code and run terminal commands
 globs: 
 alwaysApply: false
 ---
-# Code generation rules
+# Code generation and terminal commands rules
 
 - When generating code, try to use the fewest number of lines possible. The fewer lines, the better.
 - DO NOT DELETE COMMENTS
+- Use `bun` as package manager
