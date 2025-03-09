@@ -1,34 +1,21 @@
 mod modules;
 use modules::{
-    audio::{get_microphones as get_audio_microphones, record},
+    audio::{get_microphones as get_audio_microphones, record, stop},
     input::paste_text,
     transcribation::whisper::inference,
 };
 
-// use std::thread;
-// use std::time::Duration;
-
-// #[tauri::command]
-// fn greet(name: &str) -> String {
-//     // Формируем приветствие
-//     let greeting = format!("Hello {} Youve been greeted from Rust", name);
-//     thread::sleep(Duration::from_secs(3));
-//     let _ = paste_text(name);
-//     greeting
-// }
-
 #[tauri::command]
-fn start_record(device_id: &str) -> String {
+fn start_record(device_id: &str) {
     let _ = record(device_id);
-    let result = inference();
-    let _ = paste_text(&result);
-    result
 }
 
 #[tauri::command]
-fn stop_record() {
-    // let _ = stop();
-    // inference();
+fn stop_record() -> String {
+    let _ = stop();
+    let result = inference();
+    let _ = paste_text(&result);
+    result
 }
 
 // Функция-обертка для Tauri
@@ -42,7 +29,11 @@ pub fn run() {
     // Создаём Tauri приложение и связываем команды
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![start_record, get_microphones])
+        .invoke_handler(tauri::generate_handler![
+            get_microphones,
+            start_record,
+            stop_record,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

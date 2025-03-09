@@ -1,7 +1,7 @@
 use anyhow::Result;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Device, FromSample, Host, Sample, SupportedStreamConfig,
+    Device, FromSample, Sample, SupportedStreamConfig,
 };
 use hound::{WavSpec, WavWriter};
 use serde::{Deserialize, Serialize};
@@ -10,11 +10,18 @@ use std::{
     fs::File,
     hash::{Hash, Hasher},
     io::BufWriter,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    time::{Duration, Instant},
 };
 
 const RECORDING_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
-const RECORDING_DURATION_SECS: u64 = 10;
+const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
+static RECORDING_ACTIVE: AtomicBool = AtomicBool::new(false);
+static mut CURRENT_STREAM: Option<Box<dyn StreamTrait>> = None;
+static mut CURRENT_WRITER: Option<WavWriterHandle> = None;
 
 type WavWriterHandle = Arc<Mutex<Option<WavWriter<BufWriter<File>>>>>;
 
@@ -92,8 +99,38 @@ fn get_input_device(device_id: &str) -> Result<Device> {
     Ok(device)
 }
 
+/// Безопасно останавливает текущую запись
+pub fn stop() -> Result<()> {
+    if !RECORDING_ACTIVE.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+
+    RECORDING_ACTIVE.store(false, Ordering::SeqCst);
+
+    // Безопасно останавливаем поток и освобождаем ресурсы
+    unsafe {
+        if let Some(stream) = CURRENT_STREAM.take() {
+            drop(stream);
+        }
+
+        if let Some(writer) = CURRENT_WRITER.take() {
+            if let Some(w) = writer.lock().unwrap().take() {
+                w.finalize()?;
+            }
+        }
+    }
+
+    println!("Запись остановлена");
+    Ok(())
+}
+
 /// Записывает аудио с выбранного устройства
 pub fn record(device_id: &str) -> Result<()> {
+    // Проверяем, не идет ли уже запись
+    if RECORDING_ACTIVE.load(Ordering::SeqCst) {
+        return Err(anyhow::anyhow!("Запись уже идет"));
+    }
+
     let device = get_input_device(device_id)?;
     println!("Устройство ввода: {}", device.name()?);
 
@@ -111,42 +148,80 @@ pub fn record(device_id: &str) -> Result<()> {
 
     let err_fn = move |err| eprintln!("Ошибка потока: {}", err);
 
+    // Устанавливаем флаг активной записи
+    RECORDING_ACTIVE.store(true, Ordering::SeqCst);
+
+    // Создаем поток записи
     let stream = match config.sample_format() {
         cpal::SampleFormat::I8 => device.build_input_stream(
             &config.into(),
-            move |data, _| write_input_data::<i8, i8>(data, &writer_clone),
+            move |data, _| {
+                if RECORDING_ACTIVE.load(Ordering::SeqCst) {
+                    write_input_data::<i8, i8>(data, &writer_clone)
+                }
+            },
             err_fn,
             None,
         )?,
         cpal::SampleFormat::I16 => device.build_input_stream(
             &config.into(),
-            move |data, _| write_input_data::<i16, i16>(data, &writer_clone),
+            move |data, _| {
+                if RECORDING_ACTIVE.load(Ordering::SeqCst) {
+                    write_input_data::<i16, i16>(data, &writer_clone)
+                }
+            },
             err_fn,
             None,
         )?,
         cpal::SampleFormat::I32 => device.build_input_stream(
             &config.into(),
-            move |data, _| write_input_data::<i32, i16>(data, &writer_clone),
+            move |data, _| {
+                if RECORDING_ACTIVE.load(Ordering::SeqCst) {
+                    write_input_data::<i32, i16>(data, &writer_clone)
+                }
+            },
             err_fn,
             None,
         )?,
         cpal::SampleFormat::F32 => device.build_input_stream(
             &config.into(),
-            move |data, _| write_input_data::<f32, i16>(data, &writer_clone),
+            move |data, _| {
+                if RECORDING_ACTIVE.load(Ordering::SeqCst) {
+                    write_input_data::<f32, i16>(data, &writer_clone)
+                }
+            },
             err_fn,
             None,
         )?,
         format => return Err(anyhow::anyhow!("Неподдерживаемый формат: {format}")),
     };
 
-    stream.play()?;
-    std::thread::sleep(std::time::Duration::from_secs(RECORDING_DURATION_SECS));
-    drop(stream);
-
-    if let Some(writer) = writer.lock().unwrap().take() {
-        writer.finalize()?;
+    // Сохраняем текущий поток и writer для возможности остановки
+    unsafe {
+        CURRENT_STREAM = Some(Box::new(stream));
+        CURRENT_WRITER = Some(writer);
     }
 
-    println!("Запись завершена: {}", RECORDING_PATH);
+    // Запускаем поток записи
+    if let Some(stream) = unsafe { CURRENT_STREAM.as_ref() } {
+        stream.play()?;
+    }
+
+    // Запускаем таймер максимальной длительности записи в отдельном потоке
+    std::thread::spawn(move || {
+        let start_time = Instant::now();
+        while RECORDING_ACTIVE.load(Ordering::SeqCst) {
+            if start_time.elapsed() >= Duration::from_secs(MAX_RECORDING_DURATION_SECS) {
+                println!(
+                    "Достигнут максимальный лимит записи ({} секунд)",
+                    MAX_RECORDING_DURATION_SECS
+                );
+                let _ = stop();
+                break;
+            }
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    });
+
     Ok(())
 }

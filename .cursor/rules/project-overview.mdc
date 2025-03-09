@@ -1,0 +1,20 @@
+---
+description: Project overview
+globs: 
+alwaysApply: false
+---
+### Project Overview: Real-Time Voice-to-Text Desktop Application
+
+**Description:**  
+This project is a cross-platform desktop application that converts speech from a microphone into text in real-time and simulates keyboard input at the cursor's location. It supports multiple transcription methods, including OpenAI-compatible API endpoints (with custom server URLs) and locally downloaded Whisper models for offline use.
+
+**Key Features:**
+- Real-time speech-to-text conversion.
+- Simulates keyboard input at the cursor position.
+- Cross-platform compatibility (Windows, macOS, Linux).
+- Supports both cloud-based (OpenAI-compatible APIs) and local (Whisper models) transcription.
+- Customizable API endpoints for flexibility.
+- Offline functionality with locally hosted Whisper models.
+
+**Target Audience:**  
+Developers, productivity enthusiasts, and users seeking accessible text input solutions.

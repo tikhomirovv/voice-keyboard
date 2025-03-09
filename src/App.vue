@@ -9,8 +9,8 @@ const refresh = async () => {
 };
 const stopRecord = async () => {
   try {
-    await invoke("stop_record");
-    greetMsg.value = "Recording stopped";
+    const result = await invoke<string>("stop_record");
+    greetMsg.value = result;
   } catch (err) {
     greetMsg.value = "Error stopping recording: " + err;
   }
@@ -22,10 +22,10 @@ const startRecord = async () => {
   }
 
   try {
-    const result = await invoke<string>("start_record", {
+    await invoke("start_record", {
       deviceId: selectedMic.value,
     });
-    greetMsg.value = result;
+    //greetMsg.value = result;
   } catch (err) {
     greetMsg.value = "Error starting recording: " + err;
   }

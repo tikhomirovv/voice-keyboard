@@ -1,0 +1,15 @@
+---
+description: Tech stack of project
+globs: 
+alwaysApply: false
+---
+# Tech Stack Overview
+
+## Frontend:
+ - Vue 3: Modern, reactive framework for building the user interface.
+ - Tailwind CSS: Utility-first CSS framework for responsive and customizable UI design.
+ - TypeScript: Adds static typing to JavaScript, improving code quality and maintainability.
+
+## Backend & Core:
+ - Rust: High-performance systems programming language for core logic and backend operations.
+ - Tauri 2: Framework for building lightweight, secure, and cross-platform desktop applications. Combines Rust for backend and web technologies for frontend.
