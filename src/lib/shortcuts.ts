@@ -1,4 +1,7 @@
 import type { ShortcutConfig } from "@/types/shortcuts";
+import { useTranscribe } from "@/composables/useTranscribe";
+
+const { start, stop } = useTranscribe();
 
 export const DEFAULT_SHORTCUTS: ShortcutConfig = {
   toggleRecording: {
@@ -8,10 +11,12 @@ export const DEFAULT_SHORTCUTS: ShortcutConfig = {
     key: "CommandOrControl+Shift+Alt+R",
     handlers: {
       onPressed: () => {
+        start();
         // Здесь будет логика начала записи
         console.log("Начало записи");
       },
       onReleased: () => {
+        stop();
         // Здесь будет логика окончания записи
         console.log("Конец записи");
       },

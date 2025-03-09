@@ -30,7 +30,10 @@ class ShortcutService {
     try {
       await register(shortcut.key, (event) => {
         const state: String = event.state;
-        console.log(`Shortcut ${shortcut.name} ${event.state}`);
+        console.log(
+          `Shortcut ${shortcut.name} ${event.state}`,
+          shortcut.handlers
+        );
 
         // Вызываем соответствующий обработчик
         if (state === KeyState.Pressed && shortcut.handlers?.onPressed) {
