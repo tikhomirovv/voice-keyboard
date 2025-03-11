@@ -5029,6 +5029,7 @@ dependencies = [
  "cpal",
  "hound",
  "inputbot",
+ "lazy_static",
  "serde",
  "serde_json",
  "tauri",

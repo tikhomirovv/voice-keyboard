@@ -4,8 +4,10 @@ use cpal::{
     Device, FromSample, Sample, SupportedStreamConfig,
 };
 use hound::{WavSpec, WavWriter};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::{
+    cell::RefCell,
     collections::hash_map::DefaultHasher,
     fs::File,
     hash::{Hash, Hasher},
@@ -20,10 +22,16 @@ use std::{
 const RECORDING_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
 const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
 static RECORDING_ACTIVE: AtomicBool = AtomicBool::new(false);
-static mut CURRENT_STREAM: Option<Box<dyn StreamTrait>> = None;
-static mut CURRENT_WRITER: Option<WavWriterHandle> = None;
 
 type WavWriterHandle = Arc<Mutex<Option<WavWriter<BufWriter<File>>>>>;
+
+thread_local! {
+    static CURRENT_STREAM: RefCell<Option<cpal::Stream>> = RefCell::new(None);
+}
+
+lazy_static! {
+    static ref CURRENT_WRITER: Mutex<Option<WavWriterHandle>> = Mutex::new(None);
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AudioDevice {
@@ -108,13 +116,13 @@ pub fn stop() -> Result<()> {
     RECORDING_ACTIVE.store(false, Ordering::SeqCst);
 
     // Безопасно останавливаем поток и освобождаем ресурсы
-    unsafe {
-        if let Some(stream) = CURRENT_STREAM.take() {
-            drop(stream);
-        }
+    if let Some(s) = CURRENT_STREAM.with(|s| s.borrow_mut().take()) {
+        drop(s);
+    }
 
-        if let Some(writer) = CURRENT_WRITER.take() {
-            if let Some(w) = writer.lock().unwrap().take() {
+    if let Ok(mut writer) = CURRENT_WRITER.lock() {
+        if let Some(w) = writer.take() {
+            if let Some(w) = w.lock().unwrap().take() {
                 w.finalize()?;
             }
         }
@@ -197,15 +205,16 @@ pub fn record(device_id: &str) -> Result<()> {
     };
 
     // Сохраняем текущий поток и writer для возможности остановки
-    unsafe {
-        CURRENT_STREAM = Some(Box::new(stream));
-        CURRENT_WRITER = Some(writer);
-    }
+    CURRENT_STREAM.with(|s| s.borrow_mut().replace(stream));
+    CURRENT_WRITER.lock().unwrap().replace(writer);
 
     // Запускаем поток записи
-    if let Some(stream) = unsafe { CURRENT_STREAM.as_ref() } {
-        stream.play()?;
-    }
+    CURRENT_STREAM.with(|s| {
+        if let Some(stream) = s.borrow().as_ref() {
+            stream.play()?;
+        }
+        Ok::<_, anyhow::Error>(())
+    })?;
 
     // Запускаем таймер максимальной длительности записи в отдельном потоке
     std::thread::spawn(move || {

@@ -26,7 +26,7 @@ Before running the application, you need to download the Whisper model. Use the 
 1. Download the Whisper model by running the following command:
 
     ```bash
-    ./scripts/download-ggml.sh
+    ./scripts/download-ggml.sh <model> models
     ```
 
 2. Install the dependencies using **bun**:

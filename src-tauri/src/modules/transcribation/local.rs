@@ -1,27 +1,37 @@
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 pub fn inference() -> String {
-    // let path_to_model = std::env::args().nth(1).unwrap();
-    const PATH_TO_MODEL: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../models/ggml-small.bin");
+    const PATH_TO_MODEL: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../models/ggml-large-v3-turbo-q5_0.bin"
+    );
     let wav_path: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
-    let language = "ru";
 
     let samples: Vec<i16> = hound::WavReader::open(wav_path)
         .unwrap()
         .into_samples::<i16>()
         .map(|x| x.unwrap())
         .collect();
+    let min_samples = (1.0 * 16_000.0) as usize;
+    if samples.len() < min_samples {
+        println!("Less than 1s. Skipping...");
+        return "".to_string();
+    }
 
     // load a context and model
     let ctx = WhisperContext::new_with_params(&PATH_TO_MODEL, WhisperContextParameters::default())
         .expect("failed to load model");
 
     let mut state = ctx.create_state().expect("failed to create state");
-
     let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
 
-    // and set the language to translate to to english
+    let language = "auto";
+    // Включаем автоматическое определение языка
+    // params.set_detect_language(true);
+    // Устанавливаем язык как auto
     params.set_language(Some(&language));
+    // Явно отключаем перевод
+    params.set_translate(false);
     // params.set_language(Some(&language, )false);
 
     // params.set_detect_language(true);
