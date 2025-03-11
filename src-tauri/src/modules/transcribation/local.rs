@@ -3,7 +3,8 @@ use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextPar
 pub fn inference() -> String {
     const PATH_TO_MODEL: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../models/ggml-large-v3-turbo-q5_0.bin"
+        // "/../models/ggml-large-v3-turbo-q5_0.bin"
+        "/../models/ggml-tiny-q5_1.bin"
     );
     let wav_path: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
 

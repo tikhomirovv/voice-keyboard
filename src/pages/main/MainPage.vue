@@ -6,6 +6,7 @@ const {
   refresh,
   set: setMicrophone,
 } = useMicrophone();
+import AudioVisualizer from "@/components/AudioVisualizer.vue";
 // Correcting the event type to Event
 
 function selectMic(event: Event) {
@@ -38,6 +39,7 @@ function selectMic(event: Event) {
       <!-- <button @click="stopRecord" class="btn-danger">Stop</button> -->
     </div>
     <!-- <p>{{ greetMsg }}</p> -->
+    <AudioVisualizer :height="100" :width="100" />
   </div>
 </template>
 
