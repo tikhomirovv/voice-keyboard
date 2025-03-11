@@ -3,15 +3,15 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "controls"
   ],
   "permissions": [
     "core:default",
     "opener:default",
     "store:default",
-    "global-shortcut:allow-is-registered",
-    "global-shortcut:allow-register",
-    "global-shortcut:allow-unregister",
-    "os:default"
+    "os:default",
+    "store:allow-load",
+    "core:webview:allow-create-webview-window"
   ]
 }

@@ -62,10 +62,10 @@ onUnmounted(() => {
 <template>
   <div>
     <div ref="containerRef"></div>
-    <div>
+    <!-- <div>
       <div>Статус: {{ recordingStatus }}</div>
-      <!-- <div>Количество пиков: {{ recordingPeak.length }}</div> -->
-      <!-- <div>Пиковое значение: {{ recordingPeak }}</div> -->
-    </div>
+      <div>Количество пиков: {{ recordingPeak.length }}</div>
+      <div>Пиковое значение: {{ recordingPeak }}</div>
+    </div> -->
   </div>
 </template>

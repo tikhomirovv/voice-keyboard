@@ -11,16 +11,11 @@ const keyMap: { [key: string]: string } = {
 export function normalizeKey(key: string): string {
   // Convert the key to lowercase for case-insensitive comparison
   let lowerCaseKey = key.toLowerCase();
-  // Log the original key for debugging purposes
-  console.log(`Original key: ${key}`);
   // Iterate through the keyMap to replace keys with their corresponding values
   Object.keys(keyMap).forEach((mapKey) => {
     // Replace the mapKey with its corresponding value in keyMap
     lowerCaseKey = lowerCaseKey.replace(mapKey, keyMap[mapKey]);
-    // Log the replacement for debugging purposes
-    console.log(`Replacing ${mapKey} with ${keyMap[mapKey]}`);
   });
-  // Return the normalized key
   return lowerCaseKey;
 }
 
