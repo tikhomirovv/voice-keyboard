@@ -1,7 +1,7 @@
 ---
-description: Use this rules when generate code and run terminal commands
+description: Use this rules when generate code and terminal commands
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # Code generation and terminal commands rules
 

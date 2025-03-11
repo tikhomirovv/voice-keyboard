@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import SettingsShortcutsItem from "./SettingsShortcutsItem.vue";
 import { useShortcuts } from "@/composables/useShortcuts";
-const { list: shortcuts } = useShortcuts();
+const { list: shortcuts, refresh } = useShortcuts();
+
+const handleShortcutUpdated = async () => {
+  await refresh();
+};
+const handleShortcutDeleted = async () => {
+  await refresh();
+};
 </script>
 <template>
   <div class="settings-container bg-white rounded-lg shadow-md">
@@ -12,6 +19,8 @@ const { list: shortcuts } = useShortcuts();
         :key="sc.id"
         :shortcut="sc"
         class="p-4 bg-gray-100 rounded-lg"
+        @shortcutDeleted="handleShortcutDeleted"
+        @shortcutUpdated="handleShortcutUpdated"
       />
     </div>
   </div>

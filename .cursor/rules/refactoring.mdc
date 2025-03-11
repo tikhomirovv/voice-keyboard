@@ -1,5 +1,5 @@
 ---
-description: Refactoring rules
+description: Use this when refactoring, editing and improve code
 globs: 
 alwaysApply: false
 ---

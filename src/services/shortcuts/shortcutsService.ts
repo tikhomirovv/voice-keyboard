@@ -1,10 +1,12 @@
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { getShortcuts, saveShortcuts } from "./shortcutsStorage";
 import { Shortcut, KeyState } from "@/types/shortcuts";
+import { DEFAULT_SHORTCUTS } from "@/lib/shortcuts";
 
 class ShortcutService {
   private registeredShortcuts: { [key: string]: Shortcut } = {};
   private initialized: boolean = false;
+  private isCleaningUp: boolean = false;
 
   /**
    * Checks if a specific string is present in the 'key' property of any registered shortcut.
@@ -21,10 +23,25 @@ class ShortcutService {
   }
 
   private async registerShortcut(shortcut: Shortcut) {
-    const keys = Array.isArray(shortcut.key) ? shortcut.key : [shortcut.key];
-    if (keys.some((key) => this.checkShortcutKeyPresence(key))) {
-      console.warn(`Горячая клавиша ${shortcut.id} уже зарегистрирована`);
+    // Если идет процесс очистки, не регистрируем новые клавиши
+    if (this.isCleaningUp) {
+      console.warn("Регистрация горячих клавиш невозможна во время очистки");
       return;
+    }
+
+    const keys = Array.isArray(shortcut.key) ? shortcut.key : [shortcut.key];
+
+    // Проверяем, не зарегистрирована ли уже эта комбинация
+    if (keys.some((key) => this.checkShortcutKeyPresence(key))) {
+      // Если клавиша уже зарегистрирована, сначала отменяем регистрацию
+      try {
+        await this.unregisterShortcut(shortcut.key);
+      } catch (error) {
+        console.warn(
+          `Не удалось отменить регистрацию клавиши ${shortcut.key}:`,
+          error
+        );
+      }
     }
 
     try {
@@ -51,18 +68,23 @@ class ShortcutService {
         `Ошибка при регистрации горячей клавиши ${shortcut.name}:`,
         error
       );
-      throw error; // Пробрасываем ошибку дальше для обработки
+      throw error;
     }
   }
 
   private async unregisterShortcut(key: string) {
     if (!this.checkShortcutKeyPresence(key)) {
-      return; // Если клавиша не зарегистрирована, ничего не делаем
+      return;
     }
 
     try {
       await unregister(key);
-      delete this.registeredShortcuts[key];
+      // Находим и удаляем все шорткаты с этим ключом
+      Object.keys(this.registeredShortcuts).forEach((id) => {
+        if (this.registeredShortcuts[id].key === key) {
+          delete this.registeredShortcuts[id];
+        }
+      });
     } catch (error) {
       console.error(
         `Ошибка при отмене регистрации горячей клавиши ${key}:`,
@@ -73,10 +95,10 @@ class ShortcutService {
   }
 
   async init() {
-    // Проверяем, не инициализирован ли уже сервис
+    // Если сервис уже инициализирован, сначала очищаем
     if (this.initialized) {
-      console.warn("ShortcutService уже инициализирован");
-      return;
+      console.warn("ShortcutService уже инициализирован, выполняем очистку");
+      await this.cleanup();
     }
 
     try {
@@ -89,6 +111,10 @@ class ShortcutService {
       console.error("Ошибка при инициализации горячих клавиш:", error);
       throw error;
     }
+  }
+
+  async deleteShortcut(id: string) {
+    return await this.updateShortcut(id, DEFAULT_SHORTCUTS[id].key);
   }
 
   async updateShortcut(id: string, newKey: string) {
@@ -110,10 +136,8 @@ class ShortcutService {
 
       // Обновляем сочетание
       shortcut.key = newKey;
-      await saveShortcuts(shortcuts);
-
-      // Регистрируем новое сочетание
       await this.registerShortcut(shortcut);
+      await saveShortcuts(shortcuts);
     } catch (error) {
       console.error(`Ошибка при обновлении горячей клавиши:`, error);
       throw error;
@@ -121,16 +145,24 @@ class ShortcutService {
   }
 
   async cleanup() {
+    if (this.isCleaningUp) {
+      console.warn("Очистка уже выполняется");
+      return;
+    }
+
+    this.isCleaningUp = true;
     try {
-      for (const shortcutKey in this.registeredShortcuts) {
-        await this.unregisterShortcut(
-          this.registeredShortcuts[shortcutKey].key
-        );
+      const shortcuts = { ...this.registeredShortcuts };
+      for (const shortcut of Object.values(shortcuts)) {
+        await this.unregisterShortcut(shortcut.key);
       }
+      this.registeredShortcuts = {};
       this.initialized = false;
     } catch (error) {
       console.error("Ошибка при очистке горячих клавиш:", error);
       throw error;
+    } finally {
+      this.isCleaningUp = false;
     }
   }
 

@@ -21,3 +21,13 @@ export interface Shortcut {
 export interface ShortcutConfig {
   [key: string]: Shortcut;
 }
+
+// Тип для хранения в store только необходимых данных
+export interface StoredShortcut {
+  id: string;
+  key: string;
+}
+
+export interface StoredShortcutConfig {
+  [key: string]: StoredShortcut;
+}

@@ -58,6 +58,21 @@ export function useShortcuts() {
     }
   };
 
+  const deleteShortcut = async (id: string) => {
+    try {
+      isLoading.value = true;
+      error.value = null;
+      await shortcutService.deleteShortcut(id);
+      await loadShortcuts();
+    } catch (err) {
+      error.value = "Ошибка при удалении горячей клавиши";
+      console.error(error.value, err);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   // Загружаем начальное состояние при монтировании компонента
   onMounted(() => {
     loadShortcuts();
@@ -68,7 +83,9 @@ export function useShortcuts() {
     list,
     isLoading,
     error,
+    refresh: loadShortcuts,
     updateShortcut,
+    deleteShortcut,
     lastPressedKeys,
     isPressing,
   };

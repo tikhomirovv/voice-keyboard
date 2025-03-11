@@ -1,23 +1,42 @@
 import { load } from "@tauri-apps/plugin-store";
-import type { ShortcutConfig, Shortcut } from "@/types/shortcuts";
+import type { ShortcutConfig, StoredShortcutConfig } from "@/types/shortcuts";
 import { DEFAULT_SHORTCUTS } from "@/lib/shortcuts";
 
 const store = await load("shortcuts.json", { autoSave: false });
 const SHORTCUTS_KEY = "shortcuts";
 
+// Преобразует полную конфигурацию в формат для хранения
+function toStorageFormat(shortcuts: ShortcutConfig): StoredShortcutConfig {
+  const storage: StoredShortcutConfig = {};
+  Object.entries(shortcuts).forEach(([id, shortcut]) => {
+    storage[id] = {
+      id: shortcut.id,
+      key: shortcut.key,
+    };
+  });
+  return storage;
+}
+
 // Получаем текущие настройки, если их нет - используем дефолтные
 export async function getShortcuts(): Promise<ShortcutConfig> {
   try {
     const result = { ...DEFAULT_SHORTCUTS };
-    const shortcuts = (await store.get(SHORTCUTS_KEY)) as ShortcutConfig;
-    // Simplifying the process of updating default shortcuts with custom ones
-    if (shortcuts) {
-      Object.keys(result).forEach((key) => {
-        if (shortcuts[key]) {
-          result[key].key = shortcuts[key].key;
+    const storedShortcuts = (await store.get(
+      SHORTCUTS_KEY
+    )) as StoredShortcutConfig;
+
+    // Обновляем только ключи из хранилища
+    if (storedShortcuts) {
+      Object.entries(storedShortcuts).forEach(([id, stored]) => {
+        if (result[id]) {
+          result[id] = {
+            ...result[id],
+            ...stored,
+          };
         }
       });
     }
+
     return result;
   } catch (error) {
     console.error("Ошибка при загрузке настроек горячих клавиш:", error);
@@ -28,7 +47,8 @@ export async function getShortcuts(): Promise<ShortcutConfig> {
 // Сохраняем измененные настройки
 export async function saveShortcuts(shortcuts: ShortcutConfig): Promise<void> {
   try {
-    await store.set(SHORTCUTS_KEY, shortcuts);
+    const storageFormat = toStorageFormat(shortcuts);
+    await store.set(SHORTCUTS_KEY, storageFormat);
     await store.save();
   } catch (error) {
     console.error("Ошибка при сохранении настроек горячих клавиш:", error);

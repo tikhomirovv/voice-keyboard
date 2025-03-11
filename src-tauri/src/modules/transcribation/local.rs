@@ -4,7 +4,7 @@ pub fn inference() -> String {
     // let path_to_model = std::env::args().nth(1).unwrap();
     const PATH_TO_MODEL: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../models/ggml-small.bin");
     let wav_path: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
-    let language = "en";
+    let language = "ru";
 
     let samples: Vec<i16> = hound::WavReader::open(wav_path)
         .unwrap()
@@ -21,7 +21,7 @@ pub fn inference() -> String {
     let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
 
     // and set the language to translate to to english
-    // params.set_language(Some(&language));
+    params.set_language(Some(&language));
     // params.set_language(Some(&language, )false);
 
     // params.set_detect_language(true);
