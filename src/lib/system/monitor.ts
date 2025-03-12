@@ -24,21 +24,21 @@ export async function setPosition(ww: WebviewWindow, position: Position) {
     ww.outerPosition(),
   ]);
 
-  let finalX = position.x;
+  let finalX = position.x ?? wwPosition.x;
+  let finalY = position.y ?? wwPosition.y;
+
   if (position.x && position.x < 0) {
     finalX = monitorInfo.size[0] - wwSize.width + position.x;
   }
-  if (finalX) {
-    finalX = Math.max(0, Math.min(finalX, monitorInfo.size[0] - wwSize.width));
-    ww.setPosition(new PhysicalPosition(finalX, wwPosition.y));
-  }
 
-  let finalY = position.y;
   if (position.y && position.y < 0) {
     finalY = monitorInfo.size[1] - wwSize.height + position.y;
   }
-  if (finalY) {
-    finalY = Math.max(0, Math.min(finalY, monitorInfo.size[1] - wwSize.height));
-    ww.setPosition(new PhysicalPosition(wwPosition.x, finalY));
-  }
+
+  finalX = Math.max(0, Math.min(finalX, monitorInfo.size[0] - wwSize.width));
+  finalY = Math.max(0, Math.min(finalY, monitorInfo.size[1] - wwSize.height));
+
+  Logger.info(`Final position`, { x: finalX, y: finalY });
+
+  await ww.setPosition(new PhysicalPosition(finalX, finalY));
 }

@@ -8,11 +8,13 @@ export const WINDOW: Window = {
   options: {
     title: "controls",
     url: "/controls",
-    width: 200,
-    maxWidth: 200,
-    height: 100,
     center: true,
-    maxHeight: 100,
+    minWidth: 20,
+    width: 300,
+    maxWidth: 100,
+    height: 30,
+    minHeight: 30,
+    maxHeight: 60,
     maximizable: false,
     closable: false,
     resizable: false,
@@ -20,7 +22,8 @@ export const WINDOW: Window = {
     transparent: true,
     decorations: false,
     alwaysOnTop: true,
-    shadow: true, // убирает тень (границы)
+    // shadow: true, // убирает тень (границы)
+    shadow: false,
     skipTaskbar: true,
   },
   onCreated: async (_: WebviewWindow) => {

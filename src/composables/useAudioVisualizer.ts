@@ -8,6 +8,7 @@ import { invoke } from "@tauri-apps/api/core";
 export function useAudioVisualizer(options: {
   width?: number;
   height?: number;
+  color?: string;
   compressor?: number; // меньше 1 -> больше компрессии, больше 1 -> expander (обратный эффект)
 }) {
   let currentChannel: Channel<RecordEvent> | null = null;
@@ -26,6 +27,7 @@ export function useAudioVisualizer(options: {
       containerRef: containerRef.value!,
       width: options.width,
       height: options.height,
+      color: options.color,
       scrollingWaveformWindow: 15,
     });
   });

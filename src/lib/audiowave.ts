@@ -13,18 +13,19 @@ interface RenderMicStreamOptions {
   containerRef: HTMLDivElement | string;
   width?: number;
   height?: number;
+  color?: string;
   scrollingWaveformWindow?: number; // Размер окна для прокрутки
 }
 
 export function renderMicStream(options: RenderMicStreamOptions): MicStream {
   const wavesurfer = WaveSurfer.create({
     container: options.containerRef,
-    waveColor: "#4F4A85",
-    progressColor: "#383351",
+    waveColor: options.color || "#4cD",
+    progressColor: "#4cD",
     width: options.width || 300,
     height: options.height || 100,
     cursorWidth: 0,
-    barWidth: 3,
+    barWidth: 2,
     barRadius: 6,
     interact: false,
     minPxPerSec: 1,
