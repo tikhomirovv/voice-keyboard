@@ -2,13 +2,11 @@ import { renderMicStream } from "@/lib/audiowave";
 import type { RecordEvent } from "@/lib/events";
 import { Channel } from "@tauri-apps/api/core";
 import { ref, onMounted, onUnmounted } from "vue";
-import WaveSurfer from "wavesurfer.js";
 import type { MicStream } from "@/lib/audiowave";
 import { invoke } from "@tauri-apps/api/core";
 
 export function useAudioVisualizer(props: { width?: number; height?: number }) {
   let currentChannel: Channel<RecordEvent> | null = null;
-  let wavesurfer: WaveSurfer | null = null;
   let micStream: MicStream | null = null;
   const containerRef = ref<HTMLDivElement | null>(null);
   const peaks = ref<number[]>([]);
@@ -20,21 +18,10 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
     channel.onmessage = onEvent;
     invoke("set_event_channel_record", { channel });
 
-    wavesurfer = WaveSurfer.create({
-      container: containerRef.value!,
-      waveColor: "#4F4A85",
-      progressColor: "#383351",
-      width: props?.width || 300,
-      height: props?.height || 100,
-      cursorWidth: 0,
-      barWidth: 10,
-      barRadius: 4,
-      interact: false,
-      minPxPerSec: 1,
-      url: "",
-    });
     micStream = renderMicStream({
-      wavesurfer,
+      containerRef: containerRef.value!,
+      width: props.width,
+      height: props.height,
       scrollingWaveformWindow: 20,
     });
   });
@@ -45,7 +32,6 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
       currentChannel = null;
     }
     micStream?.onDestroy();
-    wavesurfer?.destroy();
   });
 
   function onEvent(message: RecordEvent) {
