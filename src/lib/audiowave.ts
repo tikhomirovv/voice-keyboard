@@ -17,8 +17,6 @@ interface RenderMicStreamOptions {
 }
 
 export function renderMicStream(options: RenderMicStreamOptions): MicStream {
-  let dataWindow: Float32Array | null = null;
-
   const wavesurfer = WaveSurfer.create({
     container: options.containerRef,
     waveColor: "#4F4A85",
@@ -26,18 +24,20 @@ export function renderMicStream(options: RenderMicStreamOptions): MicStream {
     width: options.width || 300,
     height: options.height || 100,
     cursorWidth: 0,
-    barWidth: 2,
-    barRadius: 4,
+    barWidth: 3,
+    barRadius: 6,
     interact: false,
     minPxPerSec: 1,
     url: "",
   });
 
+  let dataWindow: Float32Array | null = null;
+  const scrollingWaveformWindow =
+    options.scrollingWaveformWindow || DEFAULT_WINDOW_SIZE;
+  const windowSize = Math.floor(scrollingWaveformWindow);
+
   const drawWaveform = (peaks: number[]) => {
     const bufferLength = peaks.length;
-    const windowSize = Math.floor(
-      options.scrollingWaveformWindow || DEFAULT_WINDOW_SIZE
-    );
     const tempArray = new Float32Array(windowSize);
 
     const startIdx = Math.min(0, windowSize - bufferLength);
@@ -48,16 +48,19 @@ export function renderMicStream(options: RenderMicStreamOptions): MicStream {
     // Render the waveform
     if (wavesurfer) {
       wavesurfer
-        .load("", [dataWindow], options.scrollingWaveformWindow)
+        .load("", [dataWindow], scrollingWaveformWindow)
         .catch((err: Error) => {
           Logger.error("[drawWaveform] Error rendering waveform:", err);
         });
     }
   };
 
+  // отрисовываем нулевую волну
+  drawWaveform([]);
+
   return {
     onDestroy: () => {
-      wavesurfer.destroy();
+      wavesurfer?.destroy();
     },
     onUpdate: (peaks: number[]) => {
       drawWaveform(peaks);

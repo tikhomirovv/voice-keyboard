@@ -11,8 +11,6 @@ export function useMicrophone() {
   const refresh = async () => {
     return getMicrophones();
   };
-  // Определяем тип микрофона So let's go. Let's start it, please.
-
   const microphones = ref<Microphone[]>([]);
   const selected = ref<string | null>(null);
 

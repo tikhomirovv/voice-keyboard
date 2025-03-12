@@ -3,10 +3,12 @@ import { useAudioVisualizer } from "@/composables/useAudioVisualizer";
 const props = defineProps<{
   width?: number;
   height?: number;
+  compressor?: number;
 }>();
 const { containerRef } = useAudioVisualizer({
   width: props.width,
   height: props.height,
+  compressor: props.compressor,
 });
 </script>
 

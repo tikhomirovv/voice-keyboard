@@ -31,6 +31,7 @@ const Logger = {
    */
   warn(message: string, ...args: any[]): void {
     warn(this.formatMessage(message, ...args));
+    console.warn(message, ...args);
   },
 
   /**
@@ -38,6 +39,7 @@ const Logger = {
    */
   debug(message: string, ...args: any[]): void {
     debug(this.formatMessage(message, ...args));
+    console.debug(message, ...args);
   },
 
   /**
@@ -45,6 +47,7 @@ const Logger = {
    */
   trace(message: string, ...args: any[]): void {
     trace(this.formatMessage(message, ...args));
+    console.trace(message, ...args);
   },
 
   /**
@@ -52,6 +55,7 @@ const Logger = {
    */
   info(message: string, ...args: any[]): void {
     info(this.formatMessage(message, ...args));
+    console.info(message, ...args);
   },
 
   /**
@@ -59,6 +63,7 @@ const Logger = {
    */
   error(message: string, ...args: any[]): void {
     error(this.formatMessage(message, ...args));
+    console.error(message, ...args);
   },
 } as const;
 

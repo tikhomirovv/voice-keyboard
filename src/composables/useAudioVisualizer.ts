@@ -5,7 +5,11 @@ import { ref, onMounted, onUnmounted } from "vue";
 import type { MicStream } from "@/lib/audiowave";
 import { invoke } from "@tauri-apps/api/core";
 
-export function useAudioVisualizer(props: { width?: number; height?: number }) {
+export function useAudioVisualizer(options: {
+  width?: number;
+  height?: number;
+  compressor?: number; // меньше 1 -> больше компрессии, больше 1 -> expander (обратный эффект)
+}) {
   let currentChannel: Channel<RecordEvent> | null = null;
   let micStream: MicStream | null = null;
   const containerRef = ref<HTMLDivElement | null>(null);
@@ -20,9 +24,9 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
 
     micStream = renderMicStream({
       containerRef: containerRef.value!,
-      width: props.width,
-      height: props.height,
-      scrollingWaveformWindow: 10,
+      width: options.width,
+      height: options.height,
+      scrollingWaveformWindow: 15,
     });
   });
 
@@ -34,6 +38,7 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
     micStream?.onDestroy();
   });
 
+  const compressor = options.compressor || 1;
   function onEvent(message: RecordEvent) {
     switch (message.event) {
       case "start":
@@ -47,7 +52,7 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
         // Конвертируем каждое значение сразу при получении
         const MAX_INT_16 = 32767;
         const float32Value = (message.data.peak / MAX_INT_16) * 10;
-        const amplifiedValue = amplifyNearZero(float32Value, 0.3);
+        const amplifiedValue = amplifyNearZero(float32Value, compressor);
         peaks.value.push(amplifiedValue);
         timestamp.value = message.data.timestamp;
         micStream?.onUpdate(peaks.value);
@@ -63,7 +68,6 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
 
   return {
     containerRef,
-    props,
     peaks,
     status,
     timestamp,
