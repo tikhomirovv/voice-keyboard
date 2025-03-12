@@ -1,5 +1,5 @@
 <script setup>
-import AudioVisualizer from "@/components/AudioVisualizer.vue";
+import AudioVisualizer from "@/components/controls/AudioVisualizer.vue";
 </script>
 
 <template>
