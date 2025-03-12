@@ -10,13 +10,17 @@ use std::sync::Mutex;
 use tauri::ipc::Channel;
 
 lazy_static! {
-    static ref GLOBAL_EVENT_CHANNEL: Mutex<Option<Channel<RecordEvent>>> = Mutex::new(None);
+    static ref GLOBAL_EVENT_CHANNEL_RECORD: Mutex<Option<Channel<RecordEvent>>> = Mutex::new(None);
 }
 
 #[tauri::command]
-fn start_record(device_id: &str, on_event: Channel<RecordEvent>) {
-    // Сохраняем канал глобально
-    *GLOBAL_EVENT_CHANNEL.lock().unwrap() = Some(on_event.clone());
+fn set_event_channel_record(channel: Channel<RecordEvent>) {
+    *GLOBAL_EVENT_CHANNEL_RECORD.lock().unwrap() = Some(channel.clone());
+}
+
+#[tauri::command]
+fn start_record(device_id: &str) {
+    // *GLOBAL_EVENT_CHANNEL.lock().unwrap() = Some(on_event.clone());
     let _ = record(device_id);
 }
 
@@ -39,8 +43,8 @@ fn get_microphones() -> Result<String, String> {
 }
 
 // Функция для получения канала из других модулей
-pub fn get_event_channel() -> Option<Channel<RecordEvent>> {
-    GLOBAL_EVENT_CHANNEL.lock().unwrap().clone()
+pub fn get_event_channel_record() -> Option<Channel<RecordEvent>> {
+    GLOBAL_EVENT_CHANNEL_RECORD.lock().unwrap().clone()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -57,6 +61,7 @@ pub fn run() {
             start_record,
             stop_record,
             start_transcribation,
+            set_event_channel_record,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

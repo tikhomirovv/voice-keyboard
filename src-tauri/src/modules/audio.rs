@@ -1,4 +1,4 @@
-use crate::get_event_channel;
+use crate::get_event_channel_record;
 use crate::modules::events::RecordEvent;
 use anyhow::Result;
 use cpal::{
@@ -118,7 +118,7 @@ where
     let peak = write_input_data(input, writer);
 
     // Отправляем событие о прогрессе, если нужно
-    if let Some(channel) = get_event_channel() {
+    if let Some(channel) = get_event_channel_record() {
         let mut last_send = LAST_SEND_TIME.lock().unwrap();
         if last_send.elapsed() >= THROTTLE_DURATION {
             channel
@@ -194,7 +194,7 @@ pub fn record(device_id: &str) -> Result<()> {
     let writer_clone = writer.clone();
 
     // Отправка события
-    if let Some(channel) = get_event_channel() {
+    if let Some(channel) = get_event_channel_record() {
         channel
             .send(RecordEvent::Start {
                 timestamp: get_current_time_millis(),
@@ -307,7 +307,7 @@ pub fn stop() -> Result<()> {
         }
     }
 
-    if let Some(channel) = get_event_channel() {
+    if let Some(channel) = get_event_channel_record() {
         channel
             .send(RecordEvent::Stop {
                 timestamp: get_current_time_millis(),

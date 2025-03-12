@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useMicrophone } from "@/composables/useMicrophone";
-import { createRecordEventChannel } from "@/lib/events";
+// import { createRecordEventChannel } from "@/lib/events";
 import Logger from "@/lib/system/logger";
 
 export function useTranscribe() {
@@ -19,7 +19,7 @@ export function useTranscribe() {
 
     invoke("start_record", {
       deviceId: selected.value,
-      onEvent: createRecordEventChannel(),
+      // onEvent: createRecordEventChannel(),
     });
   };
 
