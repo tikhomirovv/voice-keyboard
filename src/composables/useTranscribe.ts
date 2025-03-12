@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useMicrophone } from "@/composables/useMicrophone";
 import { createRecordEventChannel } from "@/lib/events";
+import Logger from "@/lib/system/logger";
+
 export function useTranscribe() {
   const { selected, refresh } = useMicrophone();
   const stop = async () => {
@@ -9,7 +11,7 @@ export function useTranscribe() {
   };
   const start = async () => {
     await refresh(); // микрофона и выбираем тот, который сохранен в хранилище
-    console.log("Start record", selected.value);
+    Logger.info("Start record", selected.value);
     if (!selected.value) {
       alert("Выберите микрофон");
       return;

@@ -1,6 +1,7 @@
 import { load } from "@tauri-apps/plugin-store";
 import type { MicrophoneConfig } from "@/types/microphone";
 import { DEFAULT_MICROPHONE } from "@/lib/microphone";
+import Logger from "@/lib/system/logger";
 
 const store = await load("microphone.json", { autoSave: false });
 const KEY = "microphone";
@@ -11,7 +12,7 @@ export async function get(): Promise<MicrophoneConfig> {
     const shortcuts = await store.get(KEY);
     return (shortcuts as MicrophoneConfig) ?? { ...DEFAULT_MICROPHONE };
   } catch (error) {
-    console.error("Ошибка при загрузке настроек горячих клавиш:", error);
+    Logger.error("Ошибка при загрузке настроек горячих клавиш:", error);
     return { ...DEFAULT_MICROPHONE };
   }
 }
@@ -22,7 +23,7 @@ export async function save(config: MicrophoneConfig): Promise<void> {
     await store.set(KEY, config);
     await store.save();
   } catch (error) {
-    console.error("Ошибка при сохранении настроек микрофона:", error);
+    Logger.error("Ошибка при сохранении настроек микрофона:", error);
     throw error;
   }
 }

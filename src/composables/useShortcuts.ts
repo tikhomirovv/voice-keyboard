@@ -3,6 +3,7 @@ import { getShortcuts } from "@/services/shortcuts/shortcutsStorage";
 import { shortcutService } from "@/services/shortcuts/shortcutsService";
 import type { ShortcutConfig } from "@/types/shortcuts";
 import { useMagicKeys, watchDeep } from "@vueuse/core";
+import Logger from "@/lib/system/logger";
 
 export function useShortcuts() {
   const list = ref<ShortcutConfig | null>(null);
@@ -37,7 +38,7 @@ export function useShortcuts() {
       list.value = await getShortcuts();
     } catch (err) {
       error.value = "Ошибка при загрузке настроек горячих клавиш";
-      console.error(error.value, err);
+      Logger.error(error.value, err);
     } finally {
       isLoading.value = false;
     }
@@ -51,7 +52,7 @@ export function useShortcuts() {
       await loadShortcuts();
     } catch (err) {
       error.value = "Ошибка при обновлении горячей клавиши";
-      console.error(error.value, err);
+      Logger.error(error.value, err);
       throw err;
     } finally {
       isLoading.value = false;
@@ -66,7 +67,7 @@ export function useShortcuts() {
       await loadShortcuts();
     } catch (err) {
       error.value = "Ошибка при удалении горячей клавиши";
-      console.error(error.value, err);
+      Logger.error(error.value, err);
       throw err;
     } finally {
       isLoading.value = false;

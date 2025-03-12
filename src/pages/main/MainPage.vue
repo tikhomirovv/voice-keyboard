@@ -34,10 +34,7 @@ function selectMic(event: Event) {
       </select>
       <button @click="refresh" class="btn-secondary">Refresh</button>
       <br />
-      <!-- <button @click="startRecord" class="btn-primary">Start record</button> -->
-      <!-- <button @click="stopRecord" class="btn-danger">Stop</button> -->
     </div>
-    <!-- <p>{{ greetMsg }}</p> -->
   </div>
 </template>
 

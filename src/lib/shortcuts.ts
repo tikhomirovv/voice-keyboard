@@ -2,6 +2,7 @@ import type { ShortcutConfig } from "@/types/shortcuts";
 import { useTranscribe } from "@/composables/useTranscribe";
 import { type } from "@tauri-apps/plugin-os";
 import type { OsType } from "@tauri-apps/plugin-os";
+import Logger from "@/lib/system/logger";
 
 const { start, stop } = useTranscribe();
 const keyMap: { [key: string]: string } = {
@@ -41,8 +42,7 @@ export const DEFAULT_SHORTCUTS: ShortcutConfig = {
     key: normalizeKey("commandorcontrol+shift+alt+d"),
     handlers: {
       onPressed: () => {
-        // Здесь будет логика переключения видимости окна
-        console.log("Переключение видимости окна");
+        Logger.info("Переключение видимости окна");
       },
     },
   },

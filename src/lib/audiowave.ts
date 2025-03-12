@@ -1,3 +1,5 @@
+import Logger from "@/lib/system/logger";
+
 export type MicStream = {
   onDestroy: () => void;
   onEnd: () => void;
@@ -44,7 +46,7 @@ export function renderMicStream(options: RenderMicStreamOptions): MicStream {
       options.wavesurfer
         .load("", [dataWindow], options.scrollingWaveformWindow)
         .catch((err: Error) => {
-          console.error("[drawWaveform] Error rendering waveform:", err);
+          Logger.error("[drawWaveform] Error rendering waveform:", err);
         });
     }
   };

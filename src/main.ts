@@ -1,25 +1,43 @@
 import { createApp } from "vue";
 import App from "@/App.vue";
-import router from "@/router";
+import Controls from "@/Controls.vue";
+import appRouter from "@/router/app";
+import controlsRouter from "@/router/controls";
 import "@/assets/main.css";
-import "@/lib/windows/controls";
 import { shortcutService } from "@/services/shortcuts/shortcutsService";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import Logger from "@/lib/system/logger";
+import WindowManager from "@/lib/system/windowManager";
+import { WINDOW as CONTROLS_WINDOW } from "@/lib/windows/controls";
 
 const currentWindow = getCurrentWindow();
-console.log("currentWindow", currentWindow);
-if (currentWindow.label === "controls") {
+switch (currentWindow.label) {
+  case "main":
+    initMainWindow();
+    break;
+  case "controls":
+    initControlsWindow();
+    break;
+}
+
+function initMainWindow() {
+  const app = createApp(App);
+  app.use(appRouter);
+  app.mount("#app");
+  WindowManager.initWindowOnce(CONTROLS_WINDOW);
+
   shortcutService.init().catch((error) => {
-    console.error("Ошибка при инициализации горячих клавиш:", error);
+    Logger.error("Ошибка при инициализации горячих клавиш:", error);
   });
-  // Добавляем обработчик для очистки при закрытии приложения
   window.addEventListener("beforeunload", () => {
     shortcutService.cleanup().catch((error) => {
-      console.error("Ошибка при очистке горячих клавиш:", error);
+      Logger.error("Ошибка при очистке горячих клавиш:", error);
     });
   });
 }
 
-const app = createApp(App);
-app.use(router);
-app.mount("#app");
+function initControlsWindow() {
+  const app = createApp(Controls);
+  app.use(controlsRouter);
+  app.mount("#app");
+}

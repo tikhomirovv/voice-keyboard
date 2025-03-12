@@ -1,6 +1,7 @@
 import { load } from "@tauri-apps/plugin-store";
 import type { ShortcutConfig, StoredShortcutConfig } from "@/types/shortcuts";
 import { DEFAULT_SHORTCUTS } from "@/lib/shortcuts";
+import Logger from "@/lib/system/logger";
 
 const store = await load("shortcuts.json", { autoSave: false });
 const SHORTCUTS_KEY = "shortcuts";
@@ -39,7 +40,7 @@ export async function getShortcuts(): Promise<ShortcutConfig> {
 
     return result;
   } catch (error) {
-    console.error("Ошибка при загрузке настроек горячих клавиш:", error);
+    Logger.error("Ошибка при загрузке настроек горячих клавиш:", error);
     return { ...DEFAULT_SHORTCUTS };
   }
 }
@@ -51,7 +52,7 @@ export async function saveShortcuts(shortcuts: ShortcutConfig): Promise<void> {
     await store.set(SHORTCUTS_KEY, storageFormat);
     await store.save();
   } catch (error) {
-    console.error("Ошибка при сохранении настроек горячих клавиш:", error);
+    Logger.error("Ошибка при сохранении настроек горячих клавиш:", error);
     throw error;
   }
 }

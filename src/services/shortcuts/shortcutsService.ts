@@ -2,6 +2,7 @@ import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { getShortcuts, saveShortcuts } from "./shortcutsStorage";
 import { Shortcut, KeyState } from "@/types/shortcuts";
 import { DEFAULT_SHORTCUTS } from "@/lib/shortcuts";
+import Logger from "@/lib/system/logger";
 
 class ShortcutService {
   private registeredShortcuts: { [key: string]: Shortcut } = {};
@@ -25,7 +26,7 @@ class ShortcutService {
   private async registerShortcut(shortcut: Shortcut) {
     // Если идет процесс очистки, не регистрируем новые клавиши
     if (this.isCleaningUp) {
-      console.warn("Регистрация горячих клавиш невозможна во время очистки");
+      Logger.warn("Регистрация горячих клавиш невозможна во время очистки");
       return;
     }
 
@@ -37,7 +38,7 @@ class ShortcutService {
       try {
         await this.unregisterShortcut(shortcut.key);
       } catch (error) {
-        console.warn(
+        Logger.warn(
           `Не удалось отменить регистрацию клавиши ${shortcut.key}:`,
           error
         );
@@ -47,7 +48,7 @@ class ShortcutService {
     try {
       await register(shortcut.key, (event) => {
         const state: String = event.state;
-        console.log(
+        Logger.info(
           `Shortcut ${shortcut.name} ${event.state}`,
           shortcut.handlers
         );
@@ -64,7 +65,7 @@ class ShortcutService {
       });
       this.registeredShortcuts[shortcut.id] = shortcut;
     } catch (error) {
-      console.error(
+      Logger.error(
         `Ошибка при регистрации горячей клавиши ${shortcut.name}:`,
         error
       );
@@ -86,7 +87,7 @@ class ShortcutService {
         }
       });
     } catch (error) {
-      console.error(
+      Logger.error(
         `Ошибка при отмене регистрации горячей клавиши ${key}:`,
         error
       );
@@ -97,7 +98,7 @@ class ShortcutService {
   async init() {
     // Если сервис уже инициализирован, сначала очищаем
     if (this.initialized) {
-      console.warn("ShortcutService уже инициализирован, выполняем очистку");
+      Logger.warn("ShortcutService уже инициализирован, выполняем очистку");
       await this.cleanup();
     }
 
@@ -108,7 +109,7 @@ class ShortcutService {
       }
       this.initialized = true;
     } catch (error) {
-      console.error("Ошибка при инициализации горячих клавиш:", error);
+      Logger.error("Ошибка при инициализации горячих клавиш:", error);
       throw error;
     }
   }
@@ -139,14 +140,14 @@ class ShortcutService {
       await this.registerShortcut(shortcut);
       await saveShortcuts(shortcuts);
     } catch (error) {
-      console.error(`Ошибка при обновлении горячей клавиши:`, error);
+      Logger.error(`Ошибка при обновлении горячей клавиши:`, error);
       throw error;
     }
   }
 
   async cleanup() {
     if (this.isCleaningUp) {
-      console.warn("Очистка уже выполняется");
+      Logger.warn("Очистка уже выполняется");
       return;
     }
 
@@ -159,7 +160,7 @@ class ShortcutService {
       this.registeredShortcuts = {};
       this.initialized = false;
     } catch (error) {
-      console.error("Ошибка при очистке горячих клавиш:", error);
+      Logger.error("Ошибка при очистке горячих клавиш:", error);
       throw error;
     } finally {
       this.isCleaningUp = false;

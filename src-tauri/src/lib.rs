@@ -47,6 +47,7 @@ pub fn get_event_channel() -> Option<Channel<RecordEvent>> {
 pub fn run() {
     // Создаём Tauri приложение и связываем команды
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())

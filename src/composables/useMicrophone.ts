@@ -5,6 +5,8 @@ import {
   get as getFromStorage,
   save as saveToStorage,
 } from "@/services/microphone/microphoneStorage";
+import Logger from "@/lib/system/logger";
+
 export function useMicrophone() {
   const refresh = async () => {
     return getMicrophones();
@@ -32,7 +34,7 @@ export function useMicrophone() {
         selected.value = microphones.value[0].id; // Если не найден, выбираем первый из списка
       }
     } catch (error) {
-      console.error("Ошибка загрузки микрофонов:", error);
+      Logger.error("Ошибка загрузки микрофонов:", error);
       // Если возникла ошибка, выбрасываем ее, чтобы она могла быть обработана на более высоком уровне
       throw error;
     }
@@ -43,9 +45,9 @@ export function useMicrophone() {
       // Attempt to save the new selected microphone to storage
       await saveMicrophoneToStorage(id);
       selected.value = id;
-      console.log(`Selected microphone saved to storage: ${id}`);
+      Logger.info(`Selected microphone saved to storage: ${id}`);
     } catch (error) {
-      console.error("Failed to save selected microphone to storage:", error);
+      Logger.error("Failed to save selected microphone to storage:", error);
     }
   };
 
@@ -56,7 +58,7 @@ export function useMicrophone() {
       // Assuming there's a function to save microphone settings to storage
       await saveToStorage(microphone);
     } else {
-      console.error(`Microphone with ID ${microphoneId} not found.`);
+      Logger.error(`Microphone with ID ${microphoneId} not found.`);
     }
   };
 
