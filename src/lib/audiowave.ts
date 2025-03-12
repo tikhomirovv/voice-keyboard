@@ -26,7 +26,7 @@ export function renderMicStream(options: RenderMicStreamOptions): MicStream {
     width: options.width || 300,
     height: options.height || 100,
     cursorWidth: 0,
-    barWidth: 10,
+    barWidth: 2,
     barRadius: 4,
     interact: false,
     minPxPerSec: 1,

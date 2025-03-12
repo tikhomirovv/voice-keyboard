@@ -24,7 +24,9 @@ function initMainWindow() {
   const app = createApp(App);
   app.use(appRouter);
   app.mount("#app");
-  WindowManager.initWindowOnce(CONTROLS_WINDOW);
+  WindowManager.destroyWindow(CONTROLS_WINDOW).then(() => {
+    WindowManager.initWindowOnce(CONTROLS_WINDOW);
+  });
 
   shortcutService.init().catch((error) => {
     Logger.error("Ошибка при инициализации горячих клавиш:", error);

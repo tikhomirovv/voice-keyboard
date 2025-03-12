@@ -9,12 +9,9 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "store:default",
     "os:default",
     "log:default",
-    "store:allow-load",
-    "core:webview:allow-create-webview-window",
-    "core:window:allow-start-dragging",
-    "core:window:allow-set-position"
+    "store:default",
+    "store:allow-load"
   ]
 }

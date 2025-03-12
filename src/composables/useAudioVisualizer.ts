@@ -22,7 +22,7 @@ export function useAudioVisualizer(props: { width?: number; height?: number }) {
       containerRef: containerRef.value!,
       width: props.width,
       height: props.height,
-      scrollingWaveformWindow: 20,
+      scrollingWaveformWindow: 10,
     });
   });
 

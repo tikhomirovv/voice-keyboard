@@ -13,6 +13,12 @@ class WindowManager {
     return new WebviewWindow(label, options);
   }
 
+  async destroyWindow(w: Window): Promise<void> {
+    const window = await this.getWindow(w.label);
+    if (window) {
+      await window.destroy();
+    }
+  }
   async initWindowOnce(w: Window): Promise<WebviewWindow> {
     const window = await this.getWindow(w.label);
     if (window) {
