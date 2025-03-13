@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AudioVisualizer from "@/components/controls/AudioVisualizer.vue";
 import { onMounted } from "vue";
-// import Logger from "@/lib/system/logger";
 import { setPosition } from "@/lib/system/monitor";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
@@ -24,7 +23,7 @@ onMounted(async () => {
         :height="14"
         :width="40"
         :color="'#ffffffcc'"
-        :compressor="0.3"
+        :compressor="0.2"
         class="mix-blend-screen"
       />
     </div>

@@ -21,6 +21,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
+pub type SampleType = i8;
+const BITS_PER_SAMPLE: u16 = 8;
 
 const RECORDING_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
 const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
@@ -36,7 +38,7 @@ lazy_static! {
     static ref CURRENT_WRITER: Mutex<Option<WavWriterHandle>> = Mutex::new(None);
     // static ref APP_HANDLE: Mutex<Option<AppHandle>> = Mutex::new(None);
     static ref LAST_SEND_TIME: Mutex<Instant> = Mutex::new(Instant::now());
-    static ref SAMPLE_BUFFER: Mutex<Vec<i16>> = Mutex::new(Vec::new());
+    static ref SAMPLE_BUFFER: Mutex<Vec<SampleType>> = Mutex::new(Vec::new());
 }
 
 const THROTTLE_DURATION: Duration = Duration::from_millis(10); // 100 -> 10 раз в секунду
@@ -59,7 +61,8 @@ fn create_wav_spec(config: &SupportedStreamConfig) -> WavSpec {
     WavSpec {
         channels: 1,
         sample_rate: config.sample_rate().0 as _,
-        bits_per_sample: 16,
+        // bits_per_sample: 16,
+        bits_per_sample: BITS_PER_SAMPLE,
         sample_format: hound::SampleFormat::Int,
     }
 }
@@ -72,23 +75,23 @@ fn get_current_time_millis() -> u128 {
 }
 
 /// Записывает входные данные в WAV файл и возвращает пиковое значение
-fn write_input_data<T>(input: &[T], writer: &WavWriterHandle) -> i16
+fn write_input_data<T>(input: &[T], writer: &WavWriterHandle) -> SampleType
 where
     T: Sample,
-    i16: Sample + FromSample<T>,
+    SampleType: Sample + FromSample<T>,
 {
-    let mut current_peak: i16 = 0;
-    let mut samples: Vec<i16> = Vec::with_capacity(input.len());
+    let mut current_peak: SampleType = 0;
+    let mut samples: Vec<SampleType> = Vec::with_capacity(input.len());
 
-    // Конвертируем входные данные в i16 и находим пиковое значение
+    // Конвертируем входные данные в SampleType и находим пиковое значение
     for &sample in input.iter() {
-        let sample = i16::from_sample(sample);
+        let sample = SampleType::from_sample(sample);
         samples.push(sample);
 
         current_peak = if sample > 0 {
-            current_peak.max(sample.min(i16::MAX))
+            current_peak.max(sample.min(SampleType::MAX))
         } else {
-            current_peak.min(sample.max(i16::MIN))
+            current_peak.min(sample.max(SampleType::MIN))
         };
     }
 
@@ -112,7 +115,7 @@ where
 fn handle_audio_data<T>(input: &[T], writer: &WavWriterHandle)
 where
     T: Sample,
-    i16: Sample + FromSample<T>,
+    SampleType: Sample + FromSample<T>,
 {
     // Записываем данные и получаем пиковое значение
     let peak = write_input_data(input, writer);

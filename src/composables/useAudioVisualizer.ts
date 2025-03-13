@@ -1,9 +1,12 @@
 import { renderMicStream } from "@/lib/audiowave";
-import type { RecordEvent } from "@/lib/events";
-import { Channel } from "@tauri-apps/api/core";
 import { ref, onMounted, onUnmounted } from "vue";
 import type { MicStream } from "@/lib/audiowave";
-import { invoke } from "@tauri-apps/api/core";
+import { useAudioEvents } from "@/composables/useAudioEvents";
+
+const MAX_INT_16 = 32767;
+const MAX_INT_8 = 128;
+const BITS_PER_SAMPLE: 8 | 16 = 8; // 8-bit or 16-bit audio
+const MAX_INT = BITS_PER_SAMPLE ? MAX_INT_8 : MAX_INT_16;
 
 export function useAudioVisualizer(options: {
   width?: number;
@@ -11,18 +14,16 @@ export function useAudioVisualizer(options: {
   color?: string;
   compressor?: number; // меньше 1 -> больше компрессии, больше 1 -> expander (обратный эффект)
 }) {
-  let currentChannel: Channel<RecordEvent> | null = null;
   let micStream: MicStream | null = null;
   const containerRef = ref<HTMLDivElement | null>(null);
+  const compressor = options.compressor || 1;
+
   const peaks = ref<number[]>([]);
   const status = ref<"idle" | "recording">("idle");
   const timestamp = ref<number>(0);
+  const audioEvents = useAudioEvents();
 
   onMounted(() => {
-    const channel = new Channel<RecordEvent>();
-    channel.onmessage = onEvent;
-    invoke("set_event_channel_record", { channel });
-
     micStream = renderMicStream({
       containerRef: containerRef.value!,
       width: options.width,
@@ -33,40 +34,34 @@ export function useAudioVisualizer(options: {
   });
 
   onUnmounted(() => {
-    if (currentChannel) {
-      currentChannel.onmessage = () => {};
-      currentChannel = null;
-    }
+    offStart();
+    offProgress();
+    offStop();
     micStream?.onDestroy();
   });
 
-  const compressor = options.compressor || 1;
-  function onEvent(message: RecordEvent) {
-    switch (message.event) {
-      case "start":
-        micStream?.onUpdate([]);
-        peaks.value = [];
-        status.value = "recording";
-        timestamp.value = message.data.timestamp;
-        break;
-      case "progress":
-        status.value = "recording";
-        // Конвертируем каждое значение сразу при получении
-        const MAX_INT_16 = 32767;
-        const float32Value = (message.data.peak / MAX_INT_16) * 10;
-        const amplifiedValue = amplifyNearZero(float32Value, compressor);
-        peaks.value.push(amplifiedValue);
-        timestamp.value = message.data.timestamp;
-        micStream?.onUpdate(peaks.value);
-        break;
-      case "stop":
-        status.value = "idle";
-        timestamp.value = message.data.timestamp;
-        micStream?.onUpdate([]);
-        peaks.value = [];
-        break;
-    }
-  }
+  const offStart = audioEvents.onStart(({ timestamp: ts }) => {
+    micStream?.onUpdate([]);
+    peaks.value = [];
+    status.value = "recording";
+    timestamp.value = ts;
+  });
+
+  const offProgress = audioEvents.onProgress(({ timestamp: ts, peak }) => {
+    status.value = "recording";
+    peak = peak / MAX_INT;
+    peak = amplifyNearZero(peak, compressor);
+    peaks.value.push(peak);
+    timestamp.value = ts;
+    micStream?.onUpdate(peaks.value);
+  });
+
+  const offStop = audioEvents.onStop(({ timestamp: ts }) => {
+    status.value = "idle";
+    timestamp.value = ts;
+    micStream?.onUpdate([]);
+    peaks.value = [];
+  });
 
   return {
     containerRef,
