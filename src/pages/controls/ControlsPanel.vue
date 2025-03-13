@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import AudioRecordStatus from "@/components/controls/AudioRecordStatus.vue";
+// import AudioRecordStatus from "@/components/controls/AudioRecordStatus.vue";
 import AudioVisualizer from "@/components/controls/AudioVisualizer.vue";
-import { onMounted } from "vue";
-import { setPosition } from "@/lib/system/monitor";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { onMounted, onUnmounted, ref, computed } from "vue";
+import { useAudioEvents } from "@/composables/useAudioEvents";
+import ControlsPlayStopButton from "@/pages/controls/ConrolsPlayStopButton.vue";
+import ControlsCancelButton from "@/pages/controls/ConrolsCancelButton.vue";
+const status = ref<"idle" | "recording">("idle");
+const audioEvents = useAudioEvents();
+const isRecording = computed(() => status.value === "recording");
 
-onMounted(async () => {
-  const ww = getCurrentWebviewWindow();
-  await ww.center();
-  await setPosition(ww, { y: -57 });
+onMounted(() => {
+  const offStart = audioEvents.onStart(() => {
+    status.value = "recording";
+  });
+  const offStop = audioEvents.onStop(() => {
+    status.value = "idle";
+  });
+
+  onUnmounted(() => {
+    offStart();
+    offStop();
+  });
 });
 </script>
 
 <template>
-  <!-- <div
-    class="bg-transparent absolute z-0 inset-0 flex flex-col justify-center items-center overflow-hidden"
-  > -->
-  <div class="bg-transparent flex flex-col justify-center items-center">
+  <div class="flex flex-col overflow-visible justify-center items-center">
     <div class="absolute inset-0 z-20" data-tauri-drag-region></div>
-    <AudioRecordStatus />
     <div
-      class="relative bg-black/70 w-[70px] rounded-full h-[28px] overflow-hidden justify-center items-center border border-white/20 flex flex-col"
+      class="relative overflow-visible bg-black/70 min-w-[80px] h-[32px] rounded-full justify-center items-center border border-white/20 flex text-white"
     >
+      <ControlsPlayStopButton :is-recording="isRecording" />
       <AudioVisualizer
         :height="14"
         :width="40"
         :color="'#ffffffcc'"
-        :compressor="0.2"
-        class="mix-blend-screen"
+        :compressor-ratio="0.3"
+        class="w-[40px]"
       />
+      <ControlsCancelButton :is-recording="isRecording" />
     </div>
   </div>
 </template>

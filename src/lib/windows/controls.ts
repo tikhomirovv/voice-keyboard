@@ -21,11 +21,11 @@ export const WINDOW: Window = {
     resizable: false,
     minimizable: false,
     transparent: true,
-    // decorations: false,
-    decorations: true,
+    decorations: false,
+    // decorations: true,
     alwaysOnTop: true,
-    shadow: true, // убирает тень (границы)
-    // shadow: false,
+    // shadow: false, // убирает тень (границы)
+    shadow: true,
     skipTaskbar: true,
   },
   onCreated: async (_: WebviewWindow) => {

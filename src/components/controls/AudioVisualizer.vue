@@ -4,18 +4,18 @@ const props = defineProps<{
   width?: number;
   height?: number;
   color?: string;
-  compressor?: number;
+  compressorRatio?: number;
 }>();
 const { containerRef } = useAudioVisualizer({
   width: props.width,
   height: props.height,
   color: props.color,
-  compressor: props.compressor,
+  compressorRatio: props.compressorRatio,
 });
 </script>
 
 <template>
-  <div>
+  <div class="flex justify-center items-center">
     <div ref="containerRef"></div>
   </div>
 </template>

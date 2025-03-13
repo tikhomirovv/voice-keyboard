@@ -163,6 +163,7 @@ class ShortcutService {
       }
       this.registeredShortcuts = {};
       this.initialized = false;
+      Logger.debug("Горячие клавиши очищены");
     } catch (error) {
       Logger.error("Ошибка при очистке горячих клавиш:", error);
       throw error;

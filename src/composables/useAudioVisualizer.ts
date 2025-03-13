@@ -2,6 +2,7 @@ import { renderMicStream } from "@/lib/audiowave";
 import { ref, onMounted, onUnmounted } from "vue";
 import type { MicStream } from "@/lib/audiowave";
 import { useAudioEvents } from "@/composables/useAudioEvents";
+import { preview } from "vite";
 
 const MAX_INT_16 = 32767;
 const MAX_INT_8 = 128;
@@ -12,11 +13,11 @@ export function useAudioVisualizer(options: {
   width?: number;
   height?: number;
   color?: string;
-  compressor?: number; // меньше 1 -> больше компрессии, больше 1 -> expander (обратный эффект)
+  compressorRatio?: number; // меньше 1 -> больше компрессии, больше 1 -> expander (обратный эффект)
 }) {
   let micStream: MicStream | null = null;
   const containerRef = ref<HTMLDivElement | null>(null);
-  const compressor = options.compressor || 1;
+  const compressorRatio = options.compressorRatio || 1;
 
   const peaks = ref<number[]>([]);
   const status = ref<"idle" | "recording">("idle");
@@ -50,7 +51,8 @@ export function useAudioVisualizer(options: {
   const offProgress = audioEvents.onProgress(({ timestamp: ts, peak }) => {
     status.value = "recording";
     peak = peak / MAX_INT;
-    peak = amplifyNearZero(peak, compressor);
+    peak = noSilent(peak, 0.1);
+    peak = compressor(peak, compressorRatio);
     peaks.value.push(peak);
     timestamp.value = ts;
     micStream?.onUpdate(peaks.value);
@@ -71,8 +73,14 @@ export function useAudioVisualizer(options: {
   };
 }
 
-// Функция amplifyNearZero изменяет значение, увеличивая его, если оно близко к нулю.
-function amplifyNearZero(value: number, power: number = 0.5): number {
-  const sign = Math.sign(value);
-  return sign * Math.pow(Math.abs(value), power);
+// Функция compressor изменяет значение, увеличивая его, если оно близко к нулю.
+function compressor(value: number, ratio: number = 0.5): number {
+  return Math.sign(value) * Math.abs(value) ** ratio;
+}
+// Если значение близко к нулю, функция возвращает случайное число
+function noSilent(value: number, noize: number): number {
+  if (value === 0) {
+    return Math.random() * noize * 2 - noize;
+  }
+  return value;
 }
