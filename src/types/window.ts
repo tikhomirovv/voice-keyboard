@@ -16,6 +16,7 @@ export type WindowLabel = WebviewLabel;
 export interface Window {
   label: string;
   options: WindowOptions;
-  onCreated: (ww: WebviewWindow) => void;
-  onError: (ww: WebviewWindow, error: any) => void;
+  onCreated: (ww: WebviewWindow) => Promise<void>;
+  onDestroyed: (ww: WebviewWindow) => Promise<void>;
+  onError: (ww: WebviewWindow, error: any) => Promise<void>;
 }

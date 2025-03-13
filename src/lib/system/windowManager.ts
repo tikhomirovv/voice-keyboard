@@ -26,6 +26,7 @@ class WindowManager {
     }
     const newWindow = await this.createWindow(w.label, w.options);
     newWindow.once("tauri://created", () => w.onCreated(newWindow));
+    newWindow.once("tauri://destroyed", () => w.onDestroyed(newWindow));
     newWindow.once("tauri://error", (e) => w.onError(newWindow, e));
     return newWindow;
   }

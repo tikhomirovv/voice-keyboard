@@ -16,14 +16,16 @@ export const WINDOW: Window = {
     minHeight: 30,
     maxHeight: 60,
     maximizable: false,
-    closable: false,
+    // closable: false,
+    closable: true,
     resizable: false,
     minimizable: false,
     transparent: true,
-    decorations: false,
+    // decorations: false,
+    decorations: true,
     alwaysOnTop: true,
-    // shadow: true, // убирает тень (границы)
-    shadow: false,
+    shadow: true, // убирает тень (границы)
+    // shadow: false,
     skipTaskbar: true,
   },
   onCreated: async (_: WebviewWindow) => {
@@ -31,5 +33,9 @@ export const WINDOW: Window = {
   },
   onError: async (_: WebviewWindow, error: any) => {
     Logger.error("an error happened creating the webview", error);
+  },
+  onDestroyed: async (w: WebviewWindow) => {
+    Logger.debug("Controls window onDestroyed");
+    w.destroy();
   },
 };

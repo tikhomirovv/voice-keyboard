@@ -63,7 +63,7 @@ class ShortcutService {
           shortcut.handlers.onReleased();
         }
       });
-      this.registeredShortcuts[shortcut.id] = shortcut;
+      this.registeredShortcuts[shortcut.key] = shortcut;
     } catch (error) {
       Logger.error(
         `Ошибка при регистрации горячей клавиши ${shortcut.name}:`,
@@ -93,6 +93,10 @@ class ShortcutService {
       );
       throw error;
     }
+  }
+
+  getShortcutss() {
+    return this.registeredShortcuts;
   }
 
   async init() {

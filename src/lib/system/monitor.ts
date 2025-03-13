@@ -38,7 +38,5 @@ export async function setPosition(ww: WebviewWindow, position: Position) {
   finalX = Math.max(0, Math.min(finalX, monitorInfo.size[0] - wwSize.width));
   finalY = Math.max(0, Math.min(finalY, monitorInfo.size[1] - wwSize.height));
 
-  Logger.info(`Final position`, { x: finalX, y: finalY });
-
   await ww.setPosition(new PhysicalPosition(finalX, finalY));
 }

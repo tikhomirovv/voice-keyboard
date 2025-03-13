@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AudioRecordStatus from "@/components/controls/AudioRecordStatus.vue";
 import AudioVisualizer from "@/components/controls/AudioVisualizer.vue";
 import { onMounted } from "vue";
 import { setPosition } from "@/lib/system/monitor";
@@ -12,12 +13,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="bg-transparent absolute z-0 inset-0 flex justify-center items-center"
-  >
+  <!-- <div
+    class="bg-transparent absolute z-0 inset-0 flex flex-col justify-center items-center overflow-hidden"
+  > -->
+  <div class="bg-transparent flex flex-col justify-center items-center">
     <div class="absolute inset-0 z-20" data-tauri-drag-region></div>
+    <AudioRecordStatus />
     <div
-      class="relative bg-black/70 w-[70px] rounded-full h-[28px] overflow-hidden flex justify-center items-center border border-white/20"
+      class="relative bg-black/70 w-[70px] rounded-full h-[28px] overflow-hidden justify-center items-center border border-white/20 flex flex-col"
     >
       <AudioVisualizer
         :height="14"
