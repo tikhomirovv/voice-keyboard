@@ -25,16 +25,10 @@ export async function init() {
 
   // On close and destroy events
   const mainWindow = getCurrentWindow();
-  await mainWindow.listen("tauri://close-requested", () => {
-    WindowManager.destroyWindow(CONTROLS_WINDOW);
-    shortcutService.cleanup();
+  await mainWindow.listen("tauri://close-requested", async () => {
+    await WindowManager.destroyWindow(CONTROLS_WINDOW);
+    await shortcutService.cleanup();
     Logger.debug("App main window destroyed");
     mainWindow.destroy();
   });
-
-  // window.addEventListener("beforeunload", () => {
-  //   shortcutService.cleanup().catch((error) => {
-  //     Logger.error("Ошибка при очистке горячих клавиш:", error);
-  //   });
-  // });
 }
