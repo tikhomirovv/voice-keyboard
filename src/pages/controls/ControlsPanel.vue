@@ -35,7 +35,7 @@ onMounted(() => {
         :height="14"
         :width="40"
         :color="'#ffffffcc'"
-        :compressor-ratio="0.3"
+        :compressor-ratio="0.4"
         class="w-[40px]"
       />
       <ControlsCancelButton :is-recording="isRecording" />

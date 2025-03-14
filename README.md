@@ -8,6 +8,7 @@ This is a cross-platform voice typing application, allowing users to dictate tex
 - **Whisper Integration**: Uses OpenAI's Whisper model for accurate voice recognition.
 - **Cross-Platform**: Built with Tauri, meaning it can be packaged for other platforms in the future (currently Windows).
 - **Fast & Lightweight**: Built with TypeScript, Vite for fast frontend development, and Rust for a highly efficient backend.
+- **Modern UI**: Styled with Tailwind CSS v4 for rapid and responsive UI development, enhanced with beautiful Heroicons.
 
 ## Installation
 
@@ -18,6 +19,8 @@ To build and run this application locally, you need:
 - [Rust](https://www.rust-lang.org) (for the backend)
 - [Tauri CLI](https://tauri.app)
 - [bun](https://bun.sh) (for managing frontend dependencies)
+- [Tailwind CSS v4](https://tailwindcss.com) (for styling)
+- [Heroicons](https://heroicons.com/) (for UI icons)
 
 ### Get Started
 

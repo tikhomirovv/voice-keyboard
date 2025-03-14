@@ -51,7 +51,7 @@ export function useAudioVisualizer(options: {
   const offProgress = audioEvents.onProgress(({ timestamp: ts, peak }) => {
     status.value = "recording";
     peak = peak / MAX_INT;
-    peak = noSilent(peak, 0.1);
+    peak = noSilent(peak, 0.03);
     peak = compressor(peak, compressorRatio);
     peaks.value.push(peak);
     timestamp.value = ts;
