@@ -1,11 +1,12 @@
-import type { EventBus } from "@/types/events";
-import type { RecordEvent } from "@/lib/events";
-const EVENT_AUDIO_START = "audio:start";
-const EVENT_AUDIO_PROGRESS = "audio:progress";
-const EVENT_AUDIO_STOP = "audio:stop";
+import type { AudioEventPayload, EventBus } from "@/types/events";
+import Logger from "@/lib/system/logger";
+
+const EVENT_AUDIO_START = "start";
+const EVENT_AUDIO_PROGRESS = "progress";
+const EVENT_AUDIO_STOP = "stop";
 
 export class AudioEventService {
-  constructor(private eventBus: EventBus) {}
+  constructor(private eventBus: EventBus<AudioEventPayload>) {}
 
   handleRustEvent(event: RecordEvent): void {
     switch (event.event) {
@@ -47,3 +48,24 @@ export class AudioEventService {
     return () => this.eventBus.off(EVENT_AUDIO_STOP, handler);
   }
 }
+
+export type RecordEvent =
+  | {
+      event: "start";
+      data: {
+        timestamp: number;
+      };
+    }
+  | {
+      event: "progress";
+      data: {
+        timestamp: number;
+        peak: number;
+      };
+    }
+  | {
+      event: "stop";
+      data: {
+        timestamp: number;
+      };
+    };

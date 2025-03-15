@@ -35,15 +35,15 @@ export const DEFAULT_SHORTCUTS: ShortcutConfig = {
       },
     },
   },
-  toggleVisibility: {
-    id: "toggleVisibility",
-    name: "Показать/скрыть окно",
-    description: "Показывает или скрывает главное окно приложения",
-    key: normalizeKey("commandorcontrol+shift+alt+d"),
-    handlers: {
-      onPressed: () => {
-        Logger.info("Переключение видимости окна");
-      },
-    },
-  },
+  // toggleVisibility: {
+  //   id: "toggleVisibility",
+  //   name: "Показать/скрыть окно",
+  //   description: "Показывает или скрывает главное окно приложения",
+  //   key: normalizeKey("commandorcontrol+shift+alt+d"),
+  //   handlers: {
+  //     onPressed: () => {
+  //       Logger.info("Переключение видимости окна");
+  //     },
+  //   },
+  // },
 };

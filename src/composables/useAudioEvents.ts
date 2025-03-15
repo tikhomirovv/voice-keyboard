@@ -1,4 +1,4 @@
-import { AudioEventService } from "@/services/audio/audioService";
+import { AudioEventService } from "@/lib/events/audio";
 import { inject } from "vue";
 
 export function useAudioEvents(): AudioEventService {

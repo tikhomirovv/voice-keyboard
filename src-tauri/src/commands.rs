@@ -19,7 +19,8 @@ pub fn start_record(device_id: &str) {
 
 #[tauri::command]
 pub fn stop_record() {
-    let _ = stop();
+    let result = stop();
+    let _ = paste_text(&result.unwrap());
 }
 
 #[tauri::command]

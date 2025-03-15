@@ -1,6 +1,7 @@
 mod commands;
 mod modules;
 use lazy_static::lazy_static;
+use modules::errors;
 use modules::events::RecordEvent;
 use std::sync::Mutex;
 use tauri::ipc::Channel;
@@ -19,9 +20,11 @@ pub fn set_event_channel_record_global(channel: Channel<RecordEvent>) {
     *GLOBAL_EVENT_CHANNEL_RECORD.lock().unwrap() = Some(channel);
 }
 
-// fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-//     Ok(())
-// }
+fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    // Инициализируем глобальный AppHandle
+    errors::init_app_handle(app.handle().clone());
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -40,7 +43,7 @@ pub fn run() {
             commands::set_event_channel_record,
             commands::get_monitor_info,
         ])
-        // .setup(setup_app)
+        .setup(setup_app)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

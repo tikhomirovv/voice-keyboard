@@ -3,10 +3,14 @@
 import AudioVisualizer from "@/components/controls/AudioVisualizer.vue";
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useAudioEvents } from "@/composables/useAudioEvents";
+import { useBackendMessageEvents } from "@/composables/useBackendMessageEvents";
 import ControlsPlayStopButton from "@/pages/controls/ConrolsPlayStopButton.vue";
 import ControlsCancelButton from "@/pages/controls/ConrolsCancelButton.vue";
+import Logger from "@/lib/system/logger";
+
 const status = ref<"idle" | "recording">("idle");
 const audioEvents = useAudioEvents();
+const backendMessageEvents = useBackendMessageEvents();
 const isRecording = computed(() => status.value === "recording");
 
 onMounted(() => {
@@ -16,10 +20,14 @@ onMounted(() => {
   const offStop = audioEvents.onStop(() => {
     status.value = "idle";
   });
+  // const offError = backendMessageEvents.onError((message) => {
+  //   Logger.debug("Error: ", message);
+  // });
 
   onUnmounted(() => {
     offStart();
     offStop();
+    // offError();
   });
 });
 </script>

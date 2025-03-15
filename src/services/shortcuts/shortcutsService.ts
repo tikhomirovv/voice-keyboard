@@ -1,4 +1,8 @@
-import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+import {
+  register,
+  unregister,
+  unregisterAll,
+} from "@tauri-apps/plugin-global-shortcut";
 import { getShortcuts, saveShortcuts } from "./shortcutsStorage";
 import { Shortcut, KeyState } from "@/types/shortcuts";
 import { DEFAULT_SHORTCUTS } from "@/lib/shortcuts";
@@ -26,7 +30,9 @@ class ShortcutService {
   private async registerShortcut(shortcut: Shortcut) {
     // Если идет процесс очистки, не регистрируем новые клавиши
     if (this.isCleaningUp) {
-      Logger.warn("Регистрация горячих клавиш невозможна во время очистки");
+      Logger.warn(
+        "[ShortcutService:RegisterShortcut] Registration not possible during cleanup"
+      );
       return;
     }
 
@@ -39,7 +45,8 @@ class ShortcutService {
         await this.unregisterShortcut(shortcut.key);
       } catch (error) {
         Logger.warn(
-          `Не удалось отменить регистрацию клавиши ${shortcut.key}:`,
+          "[ShortcutService:RegisterShortcut] Failed to unregister shortcut",
+          shortcut.key,
           error
         );
       }
@@ -48,9 +55,11 @@ class ShortcutService {
     try {
       await register(shortcut.key, (event) => {
         const state: String = event.state;
-        Logger.info(
-          `Shortcut ${shortcut.name} ${event.state}`,
-          shortcut.handlers
+        Logger.debug(
+          "[ShortcutService:Event]",
+          shortcut.key,
+          shortcut.name,
+          event.state
         );
 
         // Вызываем соответствующий обработчик
@@ -157,13 +166,13 @@ class ShortcutService {
 
     this.isCleaningUp = true;
     try {
-      const shortcuts = { ...this.registeredShortcuts };
-      for (const shortcut of Object.values(shortcuts)) {
-        await this.unregisterShortcut(shortcut.key);
-      }
+      // const shortcuts = { ...this.registeredShortcuts };
+      // for (const shortcut of Object.values(shortcuts)) {
+      //   await this.unregisterShortcut(shortcut.key);
+      // }
+      await unregisterAll();
       this.registeredShortcuts = {};
       this.initialized = false;
-      Logger.debug("Горячие клавиши очищены");
     } catch (error) {
       Logger.error("Ошибка при очистке горячих клавиш:", error);
       throw error;

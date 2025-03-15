@@ -19,9 +19,8 @@ export async function init() {
   });
 
   // Init shortcuts
-  shortcutService.init().catch((error) => {
-    Logger.error("Ошибка при инициализации горячих клавиш:", error);
-  });
+  await shortcutService.cleanup();
+  await shortcutService.init();
 
   // On close and destroy events
   const mainWindow = getCurrentWindow();

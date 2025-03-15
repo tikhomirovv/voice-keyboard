@@ -43,7 +43,7 @@ export function useMicrophone() {
       // Attempt to save the new selected microphone to storage
       await saveMicrophoneToStorage(id);
       selected.value = id;
-      Logger.info(`Selected microphone saved to storage: ${id}`);
+      Logger.debug("[Microphone:Set] Saved to storage", id);
     } catch (error) {
       Logger.error("Failed to save selected microphone to storage:", error);
     }
@@ -56,7 +56,7 @@ export function useMicrophone() {
       // Assuming there's a function to save microphone settings to storage
       await saveToStorage(microphone);
     } else {
-      Logger.error(`Microphone with ID ${microphoneId} not found.`);
+      Logger.error("[Microphone:Set] Microphone not found", microphoneId);
     }
   };
 
