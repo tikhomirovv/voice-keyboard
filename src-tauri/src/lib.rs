@@ -1,28 +1,36 @@
 mod commands;
 mod modules;
+mod utils;
 use lazy_static::lazy_static;
-use modules::errors;
-use modules::events::RecordEvent;
+use std::sync::Arc;
 use std::sync::Mutex;
-use tauri::ipc::Channel;
+use tauri::AppHandle;
 
 lazy_static! {
-    static ref GLOBAL_EVENT_CHANNEL_RECORD: Mutex<Option<Channel<RecordEvent>>> = Mutex::new(None);
+    static ref GLOBAL_APP_HANDLE: Mutex<Option<Arc<AppHandle>>> = Mutex::new(None);
 }
 
-// Функция для получения канала из других модулей
-pub fn get_event_channel_record() -> Option<Channel<RecordEvent>> {
-    GLOBAL_EVENT_CHANNEL_RECORD.lock().unwrap().clone()
+/// Инициализация глобального AppHandle
+pub fn init_app_handle(app_handle: AppHandle) {
+    if let Ok(mut handle) = GLOBAL_APP_HANDLE.lock() {
+        *handle = Some(Arc::new(app_handle));
+    }
 }
 
-// Функция для установки канала
-pub fn set_event_channel_record_global(channel: Channel<RecordEvent>) {
-    *GLOBAL_EVENT_CHANNEL_RECORD.lock().unwrap() = Some(channel);
+/// Получение глобального AppHandle
+pub fn get_app_handle() -> Option<Arc<AppHandle>> {
+    match GLOBAL_APP_HANDLE.lock() {
+        Ok(guard) => guard.clone(),
+        Err(_) => {
+            eprintln!("[Error] Failed to acquire app handle lock");
+            None
+        }
+    }
 }
 
 fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // Инициализируем глобальный AppHandle
-    errors::init_app_handle(app.handle().clone());
+    init_app_handle(app.handle().clone());
     Ok(())
 }
 

@@ -1,10 +1,9 @@
+use crate::modules::events::record::{set_event_channel_record_global, RecordEvent};
 use crate::modules::{
     audio::{get_microphones as get_audio_microphones, record, stop},
-    events::RecordEvent,
     input::paste_text,
     transcribation::local::inference,
 };
-use crate::set_event_channel_record_global;
 use tauri::{ipc::Channel, Manager};
 
 #[tauri::command]

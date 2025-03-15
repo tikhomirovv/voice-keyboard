@@ -12,11 +12,13 @@ use std::time::Duration;
 lazy_static! {
     static ref TCP_STREAM: Mutex<Option<TcpStream>> = Mutex::new(None);
     static ref ACCUMULATED_TEXT: Mutex<String> = Mutex::new(String::new());
-    static ref SAMPLE_BUFFER: Mutex<VecDeque<Vec<i8>>> = Mutex::new(VecDeque::new());
+    static ref SAMPLE_BUFFER: Mutex<VecDeque<Vec<SampleType>>> = Mutex::new(VecDeque::new());
     static ref IS_PROCESSING: AtomicBool = AtomicBool::new(false);
     static ref IS_CONNECTED: AtomicBool = AtomicBool::new(false);
     static ref DEBUG_WHISPER: AtomicBool = AtomicBool::new(false);
 }
+
+use crate::modules::audio::SampleType;
 
 pub struct WhisperStreamer;
 
@@ -140,7 +142,7 @@ impl WhisperStreamer {
         DEBUG_WHISPER.store(enable, Ordering::SeqCst);
     }
 
-    fn validate_audio_data(samples: &[i8]) -> Result<()> {
+    fn validate_audio_data(samples: &[SampleType]) -> Result<()> {
         if DEBUG_WHISPER.load(Ordering::SeqCst) {
             // Проверяем базовые параметры
             if samples.is_empty() {
@@ -151,8 +153,8 @@ impl WhisperStreamer {
             println!("Audio data size: {} bytes", samples.len());
 
             // Проверяем диапазон значений и считаем статистику
-            let mut min_value = i8::MAX;
-            let mut max_value = i8::MIN;
+            let mut min_value = SampleType::MAX;
+            let mut max_value = SampleType::MIN;
             let mut sum: i32 = 0;
             let mut zero_count = 0;
 
@@ -191,7 +193,7 @@ impl WhisperStreamer {
     }
 
     /// Отправка аудио данных на сервер
-    pub fn send_audio(samples: &[i8]) -> Result<()> {
+    pub fn send_audio(samples: &[SampleType]) -> Result<()> {
         // Сначала валидируем данные
         if let Err(e) = Self::validate_audio_data(samples) {
             eprintln!("Audio validation failed: {}", e);

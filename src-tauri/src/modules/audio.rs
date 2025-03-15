@@ -1,5 +1,7 @@
-use crate::get_event_channel_record;
-use crate::modules::events::RecordEvent;
+pub type SampleType = i8;
+const BITS_PER_SAMPLE: u16 = 8;
+
+use crate::modules::events::record::RecordEvent;
 use crate::modules::transcribation::whisper_streamer::WhisperStreamer;
 use anyhow::Result;
 use cpal::{
@@ -9,7 +11,6 @@ use cpal::{
 use hound::{WavSpec, WavWriter};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
@@ -22,8 +23,6 @@ use std::{
     },
     time::{Duration, Instant},
 };
-pub type SampleType = i8;
-const BITS_PER_SAMPLE: u16 = 8;
 
 const RECORDING_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../recorded.wav");
 const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
@@ -37,7 +36,6 @@ thread_local! {
 
 lazy_static! {
     static ref CURRENT_WRITER: Mutex<Option<WavWriterHandle>> = Mutex::new(None);
-    // static ref APP_HANDLE: Mutex<Option<AppHandle>> = Mutex::new(None);
     static ref LAST_SEND_TIME: Mutex<Instant> = Mutex::new(Instant::now());
     static ref SAMPLE_BUFFER: Mutex<Vec<SampleType>> = Mutex::new(Vec::new());
     static ref DEBUG_AUDIO: AtomicBool = AtomicBool::new(false);
@@ -68,13 +66,6 @@ fn create_wav_spec(config: &SupportedStreamConfig) -> WavSpec {
         sample_format: hound::SampleFormat::Int,
     }
 }
-// Function to get the current time in milliseconds since the Unix Epoch
-fn get_current_time_millis() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis()
-}
 
 /// Вычисляет пиковое значение из сэмплов и отправляет события о прогрессе
 fn process_peaks(samples: &[SampleType]) {
@@ -87,18 +78,10 @@ fn process_peaks(samples: &[SampleType]) {
     });
 
     // Отправляем событие о прогрессе, если нужно
-    if let Some(channel) = get_event_channel_record() {
-        let mut last_send = LAST_SEND_TIME.lock().unwrap();
-        if last_send.elapsed() >= THROTTLE_DURATION {
-            channel
-                .send(RecordEvent::Progress {
-                    timestamp: get_current_time_millis(),
-                    peak: current_peak,
-                })
-                .ok();
-
-            *last_send = Instant::now();
-        }
+    let mut last_send = LAST_SEND_TIME.lock().unwrap();
+    if last_send.elapsed() >= THROTTLE_DURATION {
+        RecordEvent::progress(current_peak).send();
+        *last_send = Instant::now();
     }
 }
 
@@ -119,16 +102,6 @@ fn write_to_wav(samples: &[SampleType], writer: &WavWriterHandle) {
             }
         } else {
             eprintln!("Не удалось получить доступ к WAV writer");
-        }
-    });
-}
-
-/// Отправляет сэмплы в WhisperStreamer
-fn send_to_whisper(samples: &[SampleType]) {
-    let samples = samples.to_vec();
-    std::thread::spawn(move || {
-        if let Err(e) = WhisperStreamer::send_audio(&samples) {
-            eprintln!("Ошибка отправки аудио в WhisperStreamer: {}", e);
         }
     });
 }
@@ -285,13 +258,7 @@ pub fn record(device_id: &str) -> Result<()> {
     };
 
     // Отправка события о начале записи
-    if let Some(channel) = get_event_channel_record() {
-        channel
-            .send(RecordEvent::Start {
-                timestamp: get_current_time_millis(),
-            })
-            .ok();
-    }
+    RecordEvent::start().send();
 
     println!("Начало записи в файл: {}", RECORDING_PATH);
 
@@ -334,12 +301,11 @@ pub fn stop() -> Result<String> {
     if !RECORDING_ACTIVE.load(Ordering::SeqCst) {
         return Ok(String::new());
     }
+    // Устанавливаем флаг активной записи
+    RECORDING_ACTIVE.store(false, Ordering::SeqCst);
 
     // Закрываем соединение с Whisper сервером и получаем текст
     let transcribed_text = WhisperStreamer::close()?;
-
-    // Устанавливаем флаг активной записи
-    RECORDING_ACTIVE.store(false, Ordering::SeqCst);
 
     // Безопасно останавливаем поток и освобождаем ресурсы
     if let Some(s) = CURRENT_STREAM.with(|s| s.borrow_mut().take()) {
@@ -355,13 +321,8 @@ pub fn stop() -> Result<String> {
         }
     }
 
-    if let Some(channel) = get_event_channel_record() {
-        channel
-            .send(RecordEvent::Stop {
-                timestamp: get_current_time_millis(),
-            })
-            .ok();
-    }
+    RecordEvent::stop().send();
+
     println!("Запись остановлена");
 
     Ok(transcribed_text)
