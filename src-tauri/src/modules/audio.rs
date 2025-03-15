@@ -40,6 +40,7 @@ lazy_static! {
     // static ref APP_HANDLE: Mutex<Option<AppHandle>> = Mutex::new(None);
     static ref LAST_SEND_TIME: Mutex<Instant> = Mutex::new(Instant::now());
     static ref SAMPLE_BUFFER: Mutex<Vec<SampleType>> = Mutex::new(Vec::new());
+    static ref DEBUG_AUDIO: AtomicBool = AtomicBool::new(false);
 }
 
 const THROTTLE_DURATION: Duration = Duration::from_millis(10); // 100 -> 10 раз в секунду
@@ -138,16 +139,40 @@ where
     T: Sample,
     SampleType: Sample + FromSample<T>,
 {
-    // Конвертируем входные данные в наш формат
+    // Конвертируем входные данные
     let samples: Vec<SampleType> = input
         .iter()
         .map(|&sample| SampleType::from_sample(sample))
         .collect();
 
-    // Запускаем обработку в отдельных потоках
+    // Добавляем отладочную информацию о входных данных
+    if DEBUG_AUDIO.load(Ordering::SeqCst) {
+        println!("Input sample count: {}", input.len());
+        println!("Converted sample count: {}", samples.len());
+
+        // Выводим информацию о первых нескольких сэмплах
+        if !samples.is_empty() {
+            println!("First 5 samples: {:?}", &samples[..samples.len().min(5)]);
+        }
+    }
+
+    // Запись в файл
     write_to_wav(&samples, writer);
-    // send_to_whisper(&samples);
+
+    // Обработка пиков
     process_peaks(&samples);
+
+    // Отправка в Whisper с отладочной информацией
+    match WhisperStreamer::send_audio(&samples) {
+        Ok(_) => {
+            if DEBUG_AUDIO.load(Ordering::SeqCst) {
+                println!("Successfully processed audio chunk");
+            }
+        }
+        Err(e) => {
+            eprintln!("Warning: Failed to send audio to Whisper: {}", e);
+        }
+    }
 }
 
 /// Получает список доступных микрофонов
@@ -232,6 +257,16 @@ where
 
 /// Записывает аудио с выбранного устройства
 pub fn record(device_id: &str) -> Result<()> {
+    // Включаем отладку
+    // set_audio_debug(true);
+    // WhisperStreamer::set_debug(true);
+
+    // Начинаем подключение к Whisper асинхронно
+    if let Err(e) = WhisperStreamer::initialize() {
+        eprintln!("Warning: Failed to initialize Whisper connection: {}", e);
+        // Продолжаем запись даже при ошибке подключения
+    }
+
     if RECORDING_ACTIVE.load(Ordering::SeqCst) {
         return Err(anyhow::anyhow!("Запись уже идет"));
     }
@@ -330,4 +365,9 @@ pub fn stop() -> Result<String> {
     println!("Запись остановлена");
 
     Ok(transcribed_text)
+}
+
+/// Добавляем публичную функцию для управления режимом отладки
+pub fn set_audio_debug(enable: bool) {
+    DEBUG_AUDIO.store(enable, Ordering::SeqCst);
 }
