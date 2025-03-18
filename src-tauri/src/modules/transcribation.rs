@@ -1,2 +1,2 @@
-pub mod local;
+pub mod _local;
 pub mod whisper_streamer;

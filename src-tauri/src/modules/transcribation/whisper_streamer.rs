@@ -1,4 +1,5 @@
 use crate::modules::errors::{ErrorCode, ErrorEmitter};
+use crate::utils::is_debug;
 use anyhow::Result;
 use lazy_static::lazy_static;
 use std::collections::VecDeque;
@@ -15,7 +16,6 @@ lazy_static! {
     static ref SAMPLE_BUFFER: Mutex<VecDeque<Vec<SampleType>>> = Mutex::new(VecDeque::new());
     static ref IS_PROCESSING: AtomicBool = AtomicBool::new(false);
     static ref IS_CONNECTED: AtomicBool = AtomicBool::new(false);
-    static ref DEBUG_WHISPER: AtomicBool = AtomicBool::new(false);
 }
 
 use crate::modules::audio::SampleType;
@@ -138,12 +138,8 @@ impl WhisperStreamer {
         });
     }
 
-    pub fn set_debug(enable: bool) {
-        DEBUG_WHISPER.store(enable, Ordering::SeqCst);
-    }
-
     fn validate_audio_data(samples: &[SampleType]) -> Result<()> {
-        if DEBUG_WHISPER.load(Ordering::SeqCst) {
+        if is_debug() {
             // Проверяем базовые параметры
             if samples.is_empty() {
                 return Err(anyhow::anyhow!("Empty audio sample"));
@@ -203,7 +199,7 @@ impl WhisperStreamer {
         // Существующий код отправки данных...
         if let Ok(mut guard) = TCP_STREAM.lock() {
             if let Some(ref mut stream) = *guard {
-                if DEBUG_WHISPER.load(Ordering::SeqCst) {
+                if is_debug() {
                     println!("Sending {} bytes to Whisper server", samples.len());
                 }
 
@@ -218,7 +214,7 @@ impl WhisperStreamer {
                     return Err(e.into());
                 }
 
-                if DEBUG_WHISPER.load(Ordering::SeqCst) {
+                if is_debug() {
                     println!("Successfully sent data to Whisper server");
                 }
             } else {

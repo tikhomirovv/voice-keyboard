@@ -5,6 +5,30 @@ import { warn, debug, trace, info, error } from "@tauri-apps/plugin-log";
  */
 const Logger = {
   /**
+   * Extracts caller file and line information from Error stack
+   * @private
+   */
+  getCallerInfo(): string {
+    const error = new Error();
+    const stack = error.stack?.split("\n");
+    if (!stack || stack.length < 4) return "";
+
+    // Get the caller line (index 3 because: 0 - Error, 1 - getCallerInfo, 2 - formatMessage, 3 - actual caller)
+    const callerLine = stack[4];
+
+    // Extract file path and line number using regex
+    const match = callerLine.match(/at\s+(?:.*\s+\()?(.+):(\d+):(\d+)/);
+    if (!match) return "";
+
+    const [, file, line] = match;
+    // Clean up the file path by removing URL-encoded parameters and decode it
+    const cleanFile = decodeURIComponent(file.split("?")[0]);
+    // Get only filename from full path
+    const fileName = cleanFile.split(/[\\/]/).pop() || cleanFile;
+    return `[${fileName}:${line}]`;
+  },
+
+  /**
    * Converts any value to a string representation
    * @private
    */
@@ -20,10 +44,14 @@ const Logger = {
    * @private
    */
   formatMessage(message: string, ...args: any[]): string {
-    if (args.length === 0) return message;
-    return `${message} | ${args
-      .map((arg) => this.convertToString(arg))
-      .join(" | ")}`;
+    const callerInfo = this.getCallerInfo();
+    const baseMessage =
+      args.length === 0
+        ? message
+        : `${message} | ${args
+            .map((arg) => this.convertToString(arg))
+            .join(" | ")}`;
+    return `${callerInfo} ${baseMessage}`;
   },
 
   /**

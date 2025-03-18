@@ -1,8 +1,8 @@
 use crate::modules::events::record::{set_event_channel_record_global, RecordEvent};
 use crate::modules::{
-    audio::{get_microphones as get_audio_microphones, record, stop},
+    audio::{device::get_microphones as get_audio_microphones, record, stop},
+    // transcribation::_local::inference,
     input::paste_text,
-    transcribation::local::inference,
 };
 use tauri::{ipc::Channel, Manager};
 
@@ -12,22 +12,24 @@ pub fn set_event_channel_record(channel: Channel<RecordEvent>) {
 }
 
 #[tauri::command]
-pub fn start_record(device_id: &str) {
-    let _ = record(device_id);
+pub async fn start_record(device_id: &str) -> Result<(), String> {
+    let _ = record(device_id).await;
+    Ok(())
 }
 
 #[tauri::command]
-pub fn stop_record() {
-    let result = stop();
+pub async fn stop_record() {
+    let result = stop().await;
     let _ = paste_text(&result.unwrap());
 }
 
-#[tauri::command]
-pub fn start_transcribation() -> String {
-    let result = inference();
-    let _ = paste_text(&result);
-    result
-}
+// #[tauri::command]
+// pub fn start_transcribation() -> String {
+//     let result = inference();
+//     let _ = paste_text(&result);
+//     result
+// }
+
 use serde::Serialize;
 #[derive(Clone, Serialize)]
 pub struct MonitorInfo {
