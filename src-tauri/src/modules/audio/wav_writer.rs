@@ -13,7 +13,7 @@ pub struct AudioFileWriter {
 
 impl AudioFileWriter {
     /// Создает новый WAV файл с заданными параметрами
-    pub fn create(path: impl AsRef<Path>, sample_rate: u32) -> Result<Self> {
+    pub fn create(id: String, sample_rate: u32) -> Result<Self> {
         let spec = WavSpec {
             channels: 1,
             sample_rate: sample_rate, // Стандартная частота дискретизации
@@ -21,10 +21,15 @@ impl AudioFileWriter {
             sample_format: hound::SampleFormat::Int,
         };
 
+        let wav_path = format!("{}/recordings/{}.wav", env!("CARGO_MANIFEST_DIR"), id); // Используем format вместо concat
+        let path = Path::new(&wav_path); // Создаем путь к файлу
+        println!("path: {}", wav_path);
+
         // Создаем директорию для записей если её нет
-        if let Some(parent) = path.as_ref().parent() {
-            let _ = std::fs::create_dir_all(parent);
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent)?;
         }
+
         let writer = WavWriter::create(path, spec)?;
 
         Ok(Self { writer })

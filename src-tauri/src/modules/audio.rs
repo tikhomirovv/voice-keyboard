@@ -4,16 +4,16 @@ pub mod wav_writer;
 
 pub type SampleType = i8;
 
-use crate::modules::audio::device::get_input_device;
-use crate::modules::audio::wav_writer::AudioFileWriter;
-use crate::modules::{audio::session::RecordingSession, events::record::RecordEvent};
+use crate::modules::{
+    audio::{device::get_input_device, session::RecordingSession, wav_writer::AudioFileWriter},
+    events::record::RecordEvent,
+};
 use anyhow::Result;
 use cpal::traits::DeviceTrait;
 use lazy_static::lazy_static;
-use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::broadcast::{self};
+use std::time::{Duration, Instant};
+use tokio::sync::broadcast::{self, error::RecvError};
 use tokio::sync::Mutex;
 
 // const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
@@ -39,15 +39,18 @@ pub async fn record(device_id: &str) -> Result<()> {
     let sample_rate = config.sample_rate().0 as u32;
 
     let mut session = RecordingSession::new();
-
+    let id = &session.id;
     // Создаем подписчика для WAV записи до запуска
     let wav_rx = session.subscribe();
-    tokio::spawn(write_to_wav(wav_rx, sample_rate));
+    tokio::spawn(write_to_wav(wav_rx, sample_rate, id.clone()));
+    // Создаем подписчик для отправки пиков
+    let peaks_tx = session.subscribe();
+    tokio::spawn(send_peaks(peaks_tx));
+    // Следим за временем записи
     tokio::spawn(watch_recording_time());
 
     // Запускаем запись
     session.start(&device)?;
-
     // Сохраняем сессию в глобальное состояние
     {
         let mut current_session = CURRENT_SESSION.lock().await;
@@ -90,20 +93,55 @@ async fn watch_recording_time() {
     }
 }
 
-async fn write_to_wav(mut wav_rx: broadcast::Receiver<Vec<SampleType>>, sample_rate: u32) {
+async fn send_peaks(mut peaks_rx: broadcast::Receiver<Vec<SampleType>>) {
+    let mut last_send_time = Instant::now();
+    const THROTTLE_DURATION: Duration = Duration::from_millis(10);
+
+    while let Ok(samples) = peaks_rx.recv().await {
+        let current_peak = samples.iter().fold(0 as SampleType, |peak, &sample| {
+            if sample > 0 {
+                peak.max(sample.min(SampleType::MAX))
+            } else {
+                peak.min(sample.max(SampleType::MIN))
+            }
+        });
+        if last_send_time.elapsed() >= THROTTLE_DURATION {
+            RecordEvent::progress(current_peak).send();
+            last_send_time = Instant::now();
+        }
+    }
+}
+
+async fn write_to_wav(
+    mut wav_rx: broadcast::Receiver<Vec<SampleType>>,
+    sample_rate: u32,
+    id: String,
+) {
     // Создаем WAV файл
-    let mut writer = match AudioFileWriter::create("recording.wav", sample_rate) {
+    let mut writer = match AudioFileWriter::create(id, sample_rate) {
         Ok(writer) => writer,
         Err(e) => {
             eprintln!("Ошибка создания WAV файла: {}", e);
             return;
         }
     };
-    // Читаем и записываем данные
-    while let Ok(samples) = wav_rx.recv().await {
-        if let Err(e) = writer.write_samples(&samples) {
-            eprintln!("Ошибка записи в WAV: {}", e);
-            break;
+    loop {
+        match wav_rx.recv().await {
+            Ok(samples) => {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                if let Err(e) = writer.write_samples(&samples) {
+                    eprintln!("Ошибка записи в WAV: {}", e);
+                    break;
+                }
+            }
+            Err(RecvError::Lagged(skipped)) => {
+                println!("Пропущено {} сэмплов из-за отставания", skipped);
+                continue; // продолжаем работу
+            }
+            Err(RecvError::Closed) => {
+                println!("Канал закрыт, завершаем запись");
+                break;
+            }
         }
     }
     // Закрываем файл

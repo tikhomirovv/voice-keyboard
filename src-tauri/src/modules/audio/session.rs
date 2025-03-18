@@ -11,8 +11,10 @@ use uuid::Uuid;
 unsafe impl Send for RecordingSession {}
 unsafe impl Sync for RecordingSession {}
 
+const BUFFER_SIZE: usize = 48000 * 5;
+
 pub struct RecordingSession {
-    id: String,
+    pub id: String,
     sender: broadcast::Sender<Vec<SampleType>>,
     stream: Option<cpal::Stream>,
 }
@@ -20,7 +22,7 @@ pub struct RecordingSession {
 impl RecordingSession {
     pub fn new() -> Self {
         let id = Uuid::new_v4().to_string();
-        let (sender, _) = broadcast::channel::<Vec<SampleType>>(32);
+        let (sender, _) = broadcast::channel::<Vec<SampleType>>(BUFFER_SIZE);
         Self {
             id,
             sender,
