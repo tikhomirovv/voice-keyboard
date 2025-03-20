@@ -1,4 +1,4 @@
-use crate::get_app_handle;
+use crate::app::get_app_handle;
 use crate::utils::get_current_timestamp;
 use serde::Serialize;
 use tauri::Emitter;
@@ -11,7 +11,7 @@ pub enum MessageEvent {
         code: u8,
         code_str: String,
         message: String,
-        timestamp: u128,
+        timestamp: u64,
     },
 }
 
@@ -26,10 +26,7 @@ impl MessageEvent {
         }
     }
     pub fn send(&self) {
-        if let Some(app_handle) = get_app_handle() {
-            let _ = app_handle.emit(Self::EVENT_NAME, self).unwrap();
-        } else {
-            println!("[Error] AppHandle not initialized - could not emit error event");
-        }
+        let app_handle = get_app_handle().unwrap();
+        app_handle.emit(Self::EVENT_NAME, self).unwrap();
     }
 }

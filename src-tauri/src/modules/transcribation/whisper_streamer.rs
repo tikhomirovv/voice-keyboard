@@ -1,5 +1,5 @@
+use crate::app::is_debug;
 use crate::modules::errors::{ErrorCode, ErrorEmitter};
-use crate::utils::is_debug;
 use anyhow::Result;
 use lazy_static::lazy_static;
 use std::collections::VecDeque;
@@ -50,7 +50,7 @@ impl WhisperStreamer {
                     let reader_stream = match stream.try_clone() {
                         Ok(s) => s,
                         Err(e) => {
-                            ErrorEmitter::emit_error(
+                            ErrorEmitter::emit(
                                 ErrorCode::StreamError,
                                 &format!("Failed to clone TCP stream: {}", e),
                             );
@@ -78,7 +78,7 @@ impl WhisperStreamer {
                                 }
                             }
                             Err(e) => {
-                                ErrorEmitter::emit_error(
+                                ErrorEmitter::emit(
                                     ErrorCode::ReadError,
                                     &format!("Error reading from server: {}", e),
                                 );
@@ -88,7 +88,7 @@ impl WhisperStreamer {
                     }
                 }
                 Err(e) => {
-                    ErrorEmitter::emit_error(
+                    ErrorEmitter::emit(
                         ErrorCode::ConnectionError,
                         &format!("Failed to connect to Whisper server at {}: {}", address, e),
                     );
@@ -122,7 +122,7 @@ impl WhisperStreamer {
                                 )
                             };
                             if let Err(e) = stream.write_all(raw_bytes) {
-                                ErrorEmitter::emit_error(
+                                ErrorEmitter::emit(
                                     ErrorCode::WriteError,
                                     &format!("Failed to send audio data: {}", e),
                                 );
@@ -207,7 +207,7 @@ impl WhisperStreamer {
                     std::slice::from_raw_parts(samples.as_ptr() as *const u8, samples.len())
                 };
                 if let Err(e) = stream.write_all(raw_bytes) {
-                    ErrorEmitter::emit_error(
+                    ErrorEmitter::emit(
                         ErrorCode::WriteError,
                         &format!("Failed to send audio data: {}", e),
                     );

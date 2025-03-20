@@ -38,7 +38,7 @@ pub struct ErrorEmitter;
 
 impl ErrorEmitter {
     /// Отправить событие об ошибке в фронтенд
-    pub fn emit_error(code: ErrorCode, message: &str) {
+    pub fn emit(code: ErrorCode, message: &str) {
         println!("[ErrorEmitter] {} - {}", code.as_str(), message);
         MessageEvent::error(code as u8, message).send();
     }

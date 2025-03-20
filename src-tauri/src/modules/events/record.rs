@@ -23,11 +23,11 @@ pub fn set_event_channel_record_global(channel: Channel<RecordEvent>) {
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum RecordEvent {
     #[serde(rename_all = "camelCase")]
-    Start { timestamp: u128 },
+    Start { timestamp: u64 },
     #[serde(rename_all = "camelCase")]
-    Progress { timestamp: u128, peak: SampleType },
+    Progress { timestamp: u64, peak: SampleType },
     #[serde(rename_all = "camelCase")]
-    Stop { timestamp: u128 },
+    Stop { timestamp: u64 },
 }
 
 impl RecordEvent {
