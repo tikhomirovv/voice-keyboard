@@ -1,20 +1,27 @@
 pub mod device;
+pub mod peaks;
 pub mod session;
 pub mod wav_writer;
 
 pub type SampleType = i8;
 
 use crate::modules::{
-    audio::{device::get_input_device, session::RecordingSession, wav_writer::AudioFileWriter},
+    audio::{
+        device::get_input_device,
+        peaks::send_peaks,
+        session::RecordingSession,
+        wav_writer::{listen_for_completion, write_to_wav},
+    },
     events::record::RecordEvent,
 };
 use anyhow::Result;
 use cpal::traits::DeviceTrait;
 use lazy_static::lazy_static;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::broadcast::{self, error::RecvError};
-use tokio::sync::Mutex;
+use tokio::{
+    sync::Mutex,
+    time::{sleep, Duration},
+};
 
 // const MAX_RECORDING_DURATION_SECS: u64 = 60 * 5;
 const MAX_RECORDING_DURATION_SECS: u64 = 5;
@@ -65,9 +72,15 @@ pub async fn record(device_id: &str) -> Result<()> {
 /// Безопасно останавливает текущую запись
 pub async fn stop() -> Result<String> {
     if let Some(mut session) = CURRENT_SESSION.lock().await.take() {
+        // Останавливаем сессию
         session.stop();
         println!("Сессия остановлена.");
         RecordEvent::stop().send();
+
+        // Ожидаем завершения записи файла
+        tokio::spawn(listen_for_completion(5, |id, path| {
+            println!("Запись {} завершена: {}", id, path);
+        }));
     }
 
     println!("Остановка записи");
@@ -77,76 +90,23 @@ pub async fn stop() -> Result<String> {
 // Следит за временем записи и останавливает её при превышении лимита
 async fn watch_recording_time() {
     let mut elapsed = 0u64;
-    let recording_active = CURRENT_SESSION.lock().await.is_some();
-    while recording_active && elapsed < MAX_RECORDING_DURATION_SECS {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+    while elapsed < MAX_RECORDING_DURATION_SECS {
+        // Проверяем наличие сессии в каждой итерации
+        let recording_active = CURRENT_SESSION.lock().await.is_some();
+        if !recording_active {
+            println!("Сессия завершена, останавливаем таймер");
+            break;
+        }
+        sleep(Duration::from_secs(1)).await;
         elapsed += 1;
     }
 
-    // Если запись все еще активна, значит достигнут лимит времени
-    if recording_active {
+    // Проверяем еще раз, так как сессия могла быть остановлена во время последнего sleep
+    if CURRENT_SESSION.lock().await.is_some() {
         println!(
             "Достигнут максимальный лимит записи ({} секунд)",
             MAX_RECORDING_DURATION_SECS
         );
         let _ = stop().await;
     }
-}
-
-async fn send_peaks(mut peaks_rx: broadcast::Receiver<Vec<SampleType>>) {
-    let mut last_send_time = Instant::now();
-    const THROTTLE_DURATION: Duration = Duration::from_millis(10);
-
-    while let Ok(samples) = peaks_rx.recv().await {
-        let current_peak = samples.iter().fold(0 as SampleType, |peak, &sample| {
-            if sample > 0 {
-                peak.max(sample.min(SampleType::MAX))
-            } else {
-                peak.min(sample.max(SampleType::MIN))
-            }
-        });
-        if last_send_time.elapsed() >= THROTTLE_DURATION {
-            RecordEvent::progress(current_peak).send();
-            last_send_time = Instant::now();
-        }
-    }
-}
-
-async fn write_to_wav(
-    mut wav_rx: broadcast::Receiver<Vec<SampleType>>,
-    sample_rate: u32,
-    id: String,
-) {
-    // Создаем WAV файл
-    let mut writer = match AudioFileWriter::create(id, sample_rate) {
-        Ok(writer) => writer,
-        Err(e) => {
-            eprintln!("Ошибка создания WAV файла: {}", e);
-            return;
-        }
-    };
-    loop {
-        match wav_rx.recv().await {
-            Ok(samples) => {
-                tokio::time::sleep(Duration::from_millis(100)).await;
-                if let Err(e) = writer.write_samples(&samples) {
-                    eprintln!("Ошибка записи в WAV: {}", e);
-                    break;
-                }
-            }
-            Err(RecvError::Lagged(skipped)) => {
-                println!("Пропущено {} сэмплов из-за отставания", skipped);
-                continue; // продолжаем работу
-            }
-            Err(RecvError::Closed) => {
-                println!("Канал закрыт, завершаем запись");
-                break;
-            }
-        }
-    }
-    // Закрываем файл
-    if let Err(e) = writer.finalize() {
-        eprintln!("Ошибка закрытия WAV файла: {}", e);
-    }
-    println!("WAV запись завершена");
 }

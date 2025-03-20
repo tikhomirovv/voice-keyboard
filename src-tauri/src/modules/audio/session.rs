@@ -3,7 +3,6 @@ use cpal::{
     traits::{DeviceTrait, StreamTrait},
     FromSample, Sample, SizedSample,
 };
-// use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
